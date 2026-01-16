@@ -254,6 +254,8 @@ body {
   overflow: hidden;
 }
 
+
+
 /* Utility: remove noise texture (keeping for backwards compat) */
 .noise-texture {
   position: relative;

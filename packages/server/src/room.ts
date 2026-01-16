@@ -13,6 +13,7 @@ import {
   type RoomConfig,
   type ServerMessage,
 } from '@dejavu/shared';
+import { generateMemoryScenario, selectDetailQuestion } from './ai';
 
 interface Session {
   playerId: string;
@@ -31,6 +32,17 @@ interface PlayerData {
   sessionToken: string;
 }
 
+interface RoundData {
+  witnessId: string;
+  memoryPrompt: string;
+  fragments: string[];
+  hints: string[];
+  detailQuestions: string[];
+  currentQuestionIndex: number;
+  playerDetails: Record<string, string>;
+  votes: Record<string, string>;
+}
+
 interface RoomState {
   roomCode: string;
   gameState: GameState;
@@ -40,6 +52,7 @@ interface RoomState {
   currentPhase: Phase;
   currentRound: number;
   phaseEndTime: number;
+  roundData: RoundData | null;
 }
 
 export class GameRoom extends DurableObject<Env> {
@@ -66,6 +79,7 @@ export class GameRoom extends DurableObject<Env> {
       currentPhase: 'lobby',
       currentRound: 0,
       phaseEndTime: 0,
+      roundData: null,
     };
 
     await this.persistState();
@@ -359,10 +373,33 @@ export class GameRoom extends DurableObject<Env> {
     this.send(ws, response);
   }
 
-  private async handleSubmitDetail(ws: WebSocket, _payload: { answer: string }): Promise<void> {
-    if (!this.state || this.state.currentPhase !== 'details') return;
+  private async handleSubmitDetail(ws: WebSocket, payload: { answer: string }): Promise<void> {
+    if (!this.state || this.state.currentPhase !== 'details' || !this.state.roundData) return;
     const session = this.findSessionBySocket(ws);
     if (!session || session.isSpectator) return;
+
+    if (this.state.roundData.playerDetails[session.playerId]) return;
+
+    this.state.roundData.playerDetails[session.playerId] = payload.answer;
+    await this.persistState();
+
+    const player = this.state.players.get(session.playerId);
+    const message: ServerMessage = {
+      type: 'player_submitted_detail',
+      payload: {
+        playerId: session.playerId,
+        playerName: player?.name || 'Unknown',
+      },
+    };
+
+    this.broadcast(message);
+
+    const submittedCount = Object.keys(this.state.roundData.playerDetails).length;
+    const totalPlayers = this.state.players.size;
+
+    if (submittedCount >= totalPlayers) {
+      await this.transitionToQuestions();
+    }
   }
 
   private async handleAskQuestion(
@@ -389,10 +426,35 @@ export class GameRoom extends DurableObject<Env> {
     if (!session || session.isSpectator) return;
   }
 
-  private async handleCastVote(ws: WebSocket, _payload: { targetPlayerId: string }): Promise<void> {
-    if (!this.state || this.state.currentPhase !== 'voting') return;
+  private async handleCastVote(ws: WebSocket, payload: { targetPlayerId: string }): Promise<void> {
+    if (!this.state || this.state.currentPhase !== 'voting' || !this.state.roundData) return;
     const session = this.findSessionBySocket(ws);
     if (!session || session.isSpectator) return;
+
+    if (this.state.roundData.votes[session.playerId]) return;
+    if (payload.targetPlayerId === session.playerId) return;
+    if (!this.state.players.has(payload.targetPlayerId)) return;
+
+    this.state.roundData.votes[session.playerId] = payload.targetPlayerId;
+    await this.persistState();
+
+    const player = this.state.players.get(session.playerId);
+    const message: ServerMessage = {
+      type: 'player_voted',
+      payload: {
+        playerId: session.playerId,
+        playerName: player?.name || 'Unknown',
+      },
+    };
+
+    this.broadcast(message);
+
+    const votedCount = Object.keys(this.state.roundData.votes).length;
+    const totalPlayers = this.state.players.size;
+
+    if (votedCount >= totalPlayers) {
+      await this.transitionToResults();
+    }
   }
 
   private async handleContinueGame(ws: WebSocket): Promise<void> {
@@ -401,6 +463,16 @@ export class GameRoom extends DurableObject<Env> {
 
     const player = this.state.players.get(session.playerId);
     if (!player?.isHost) return;
+
+    if (this.state.currentPhase !== 'results') return;
+
+    if (this.state.currentRound >= this.state.config.rounds) {
+      await this.endGame('completed');
+    } else {
+      this.state.currentRound++;
+      this.state.roundData = null;
+      await this.startRound();
+    }
   }
 
   private async handleReconnect(
@@ -531,6 +603,22 @@ export class GameRoom extends DurableObject<Env> {
   private async startRound(): Promise<void> {
     if (!this.state) return;
 
+    const scenario = await generateMemoryScenario(this.env.AI);
+
+    const playerIds = [...this.state.players.keys()];
+    const witnessId = playerIds[Math.floor(Math.random() * playerIds.length)];
+
+    this.state.roundData = {
+      witnessId,
+      memoryPrompt: scenario.prompt,
+      fragments: scenario.fragments,
+      hints: scenario.hints,
+      detailQuestions: scenario.detailQuestions,
+      currentQuestionIndex: 0,
+      playerDetails: {},
+      votes: {},
+    };
+
     this.state.currentPhase = 'memory';
     this.state.phaseEndTime = Date.now() + this.getScaledDuration('memory');
     await this.persistState();
@@ -548,7 +636,7 @@ export class GameRoom extends DurableObject<Env> {
     const memoryMessage: ServerMessage = {
       type: 'memory_revealed',
       payload: {
-        prompt: 'The last day of summer. A goodbye at a train station. Something was left behind on the platform.',
+        prompt: scenario.prompt,
         timeRemaining: this.getScaledDuration('memory'),
       },
     };
@@ -584,26 +672,58 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private async transitionToRoles(): Promise<void> {
-    if (!this.state) return;
+    if (!this.state || !this.state.roundData) return;
 
     this.state.currentPhase = 'roles';
     this.state.phaseEndTime = Date.now() + this.getScaledDuration('roles');
     await this.persistState();
 
+    const { witnessId, fragments, hints } = this.state.roundData;
+    const timeRemaining = this.getScaledDuration('roles');
+
+    for (const [playerId, session] of this.sessions) {
+      if (session.isSpectator) continue;
+
+      const isWitness = playerId === witnessId;
+      const message: ServerMessage = {
+        type: 'role_assigned',
+        payload: {
+          role: isWitness ? 'witness' : 'imposter',
+          fragments: isWitness ? fragments : undefined,
+          hints: isWitness ? undefined : hints,
+          timeRemaining,
+        },
+      };
+
+      this.send(session.socket, message);
+    }
+
     this.ctx.storage.setAlarm(this.state.phaseEndTime);
   }
 
   private async transitionToDetails(): Promise<void> {
-    if (!this.state) return;
+    if (!this.state || !this.state.roundData) return;
 
     this.state.currentPhase = 'details';
     this.state.phaseEndTime = Date.now() + this.getScaledDuration('details');
+    this.state.roundData.playerDetails = {};
+
+    const question = selectDetailQuestion(
+      {
+        prompt: this.state.roundData.memoryPrompt,
+        fragments: this.state.roundData.fragments,
+        hints: this.state.roundData.hints,
+        detailQuestions: this.state.roundData.detailQuestions,
+      },
+      this.state.roundData.currentQuestionIndex
+    );
+
     await this.persistState();
 
     const message: ServerMessage = {
       type: 'detail_question',
       payload: {
-        question: 'What was the weather like?',
+        question,
         timeRemaining: this.getScaledDuration('details'),
       },
     };
@@ -613,20 +733,30 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private async transitionToQuestions(): Promise<void> {
-    if (!this.state) return;
+    if (!this.state || !this.state.roundData) return;
 
     this.state.currentPhase = 'questions';
     this.state.phaseEndTime = Date.now() + this.getScaledDuration('questions');
     await this.persistState();
 
+    const message: ServerMessage = {
+      type: 'details_revealed',
+      payload: {
+        details: this.state.roundData.playerDetails,
+        timeRemaining: this.getScaledDuration('questions'),
+      },
+    };
+
+    this.broadcast(message);
     this.ctx.storage.setAlarm(this.state.phaseEndTime);
   }
 
   private async transitionToVoting(): Promise<void> {
-    if (!this.state) return;
+    if (!this.state || !this.state.roundData) return;
 
     this.state.currentPhase = 'voting';
     this.state.phaseEndTime = Date.now() + this.getScaledDuration('voting');
+    this.state.roundData.votes = {};
     await this.persistState();
 
     const message: ServerMessage = {
@@ -641,24 +771,64 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private async transitionToResults(): Promise<void> {
-    if (!this.state) return;
+    if (!this.state || !this.state.roundData) return;
 
     this.state.currentPhase = 'results';
     this.state.phaseEndTime = Date.now() + this.getScaledDuration('results');
+
+    const { witnessId, votes, fragments } = this.state.roundData;
+    const roundScores: Record<string, number> = {};
+
+    for (const player of this.state.players.values()) {
+      roundScores[player.id] = 0;
+    }
+
+    for (const [voterId, votedForId] of Object.entries(votes)) {
+      if (votedForId === witnessId) {
+        roundScores[voterId] = (roundScores[voterId] || 0) + 10;
+      }
+    }
+
+    const votesForWitness = Object.values(votes).filter((v) => v === witnessId).length;
+    const totalVotes = Object.keys(votes).length;
+    const wrongVotes = totalVotes - votesForWitness;
+    roundScores[witnessId] = (roundScores[witnessId] || 0) + wrongVotes * 5;
+
+    for (const [playerId, points] of Object.entries(roundScores)) {
+      const player = this.state.players.get(playerId);
+      if (player) {
+        player.score += points;
+      }
+    }
+
     await this.persistState();
 
+    const totalScores: Record<string, number> = {};
+    for (const player of this.state.players.values()) {
+      totalScores[player.id] = player.score;
+    }
+
+    const witness = this.state.players.get(witnessId);
+    const message: ServerMessage = {
+      type: 'round_results',
+      payload: {
+        roundNumber: this.state.currentRound,
+        witnessIds: [witnessId],
+        witnessNames: [witness?.name || 'Unknown'],
+        fragments,
+        votes,
+        roundScores,
+        totalScores,
+        timeRemaining: this.getScaledDuration('results'),
+      },
+    };
+
+    this.broadcast(message);
     this.ctx.storage.setAlarm(this.state.phaseEndTime);
   }
 
   private async handleRoundEnd(): Promise<void> {
-    if (!this.state) return;
-
-    if (this.state.currentRound >= this.state.config.rounds) {
-      await this.endGame('completed');
-    } else {
-      this.state.currentRound++;
-      await this.startRound();
-    }
+    return;
   }
 
   private async endGame(reason: 'completed' | 'insufficient_players' | 'host_ended'): Promise<void> {

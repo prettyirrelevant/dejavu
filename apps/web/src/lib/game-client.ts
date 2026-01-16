@@ -1,4 +1,5 @@
 import type { ClientMessage, RoomConfig, ServerMessage } from '@dejavu/shared';
+import toast from 'solid-toast';
 import { createRoom, getWebSocketUrl } from './api';
 import { setSession, getSession } from './storage';
 import { setGame, resetGame } from '../stores/game';
@@ -80,12 +81,14 @@ function handleMessage(message: ServerMessage): void {
     }
 
     case 'player_left': {
-      const { playerId } = message.payload;
+      const { playerId, playerName, reason } = message.payload;
       setGame((prev) => ({
         ...prev,
         players: prev.players.filter((p) => p.id !== playerId),
         spectators: prev.spectators.filter((p) => p.id !== playerId),
       }));
+      const reasonText = reason === 'disconnected' ? 'disconnected' : 'left';
+      toast(`${playerName} ${reasonText}`);
       break;
     }
 
@@ -115,7 +118,7 @@ function handleMessage(message: ServerMessage): void {
     }
 
     case 'host_transferred': {
-      const { newHostId } = message.payload;
+      const { newHostId, newHostName } = message.payload;
       setGame((prev) => ({
         ...prev,
         isHost: prev.playerId === newHostId,
@@ -124,6 +127,7 @@ function handleMessage(message: ServerMessage): void {
           isHost: p.id === newHostId,
         })),
       }));
+      toast(`${newHostName} is now the host`);
       break;
     }
 
@@ -239,10 +243,19 @@ function handleMessage(message: ServerMessage): void {
     }
 
     case 'game_finished': {
+      const { reason, winner } = message.payload;
       setGame((prev) => ({
         ...prev,
         phase: 'lobby',
+        players: prev.players.map((p) => ({ ...p, isReady: false })),
       }));
+      if (reason === 'completed' && winner?.name) {
+        toast.success(`Game over! ${winner.name} wins!`);
+      } else if (reason === 'insufficient_players') {
+        toast.error('Game ended: not enough players');
+      } else if (reason === 'host_ended') {
+        toast('Game ended by host');
+      }
       break;
     }
 
@@ -276,6 +289,7 @@ function handleMessage(message: ServerMessage): void {
 
     case 'error': {
       console.error('Server error:', message.payload.code, message.payload.message);
+      toast.error(message.payload.message);
       break;
     }
   }
