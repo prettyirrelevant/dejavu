@@ -1,5 +1,6 @@
 import { createSignal, For, Show, createMemo } from 'solid-js';
 import Timer from '../Timer';
+import ConnectionIndicator from '../ConnectionIndicator';
 import { cn } from '../../lib/cn';
 import { game } from '../../stores/game';
 import { castVote } from '../../lib/game-client';
@@ -77,17 +78,29 @@ export default function VotingPhase() {
                         const voted = game.votedPlayers.includes(player.id);
                         const isYou = player.id === game.playerId;
                         return (
-                          <li class="flex items-center justify-between border border-border px-3 py-2">
-                            <span class="text-sm text-text">
-                              {player.name}
-                              <Show when={isYou}>
-                                <span class="text-muted"> (you)</span>
+                          <li
+                            class={cn(
+                              'flex items-center justify-between border border-border px-3 py-2',
+                              player.connectionStatus === 'dropped' && 'opacity-50'
+                            )}
+                          >
+                            <div class="flex items-center gap-2">
+                              <span class="text-sm text-text">
+                                {player.name}
+                                <Show when={isYou}>
+                                  <span class="text-muted"> (you)</span>
+                                </Show>
+                              </span>
+                              <Show when={player.connectionStatus !== 'connected'}>
+                                <ConnectionIndicator status={player.connectionStatus} />
                               </Show>
-                            </span>
+                            </div>
                             <Show
                               when={voted}
                               fallback={
-                                <span class="text-xs text-muted">Deciding...</span>
+                                <span class="text-xs text-muted">
+                                  {player.connectionStatus === 'dropped' ? 'Disconnected' : 'Deciding...'}
+                                </span>
                               }
                             >
                               <svg
@@ -124,14 +137,21 @@ export default function VotingPhase() {
                         <button
                           type="button"
                           onClick={() => setSelectedPlayer(player.id)}
+                          disabled={player.connectionStatus === 'dropped'}
                           class={cn(
                             'flex w-full items-center justify-between border px-4 py-3 text-left transition-colors',
                             isSelected
                               ? 'border-witness bg-witness/5'
-                              : 'border-border bg-surface hover:border-muted'
+                              : 'border-border bg-surface hover:border-muted',
+                            player.connectionStatus === 'dropped' && 'cursor-not-allowed opacity-50'
                           )}
                         >
-                          <span class="font-medium text-text">{player.name}</span>
+                          <div class="flex items-center gap-2">
+                            <span class="font-medium text-text">{player.name}</span>
+                            <Show when={player.connectionStatus !== 'connected'}>
+                              <ConnectionIndicator status={player.connectionStatus} />
+                            </Show>
+                          </div>
                           <Show when={isSelected}>
                             <div class="size-4 border-2 border-witness bg-witness" />
                           </Show>

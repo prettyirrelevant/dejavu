@@ -2,6 +2,7 @@ import { createSignal, For, Show, createMemo } from 'solid-js';
 import { cn } from '../lib/cn';
 import { game } from '../stores/game';
 import { setReady, startGame } from '../lib/game-client';
+import ConnectionIndicator from './ConnectionIndicator';
 
 interface LobbyProps {
   roomCode: string;
@@ -110,11 +111,10 @@ export default function Lobby(props: LobbyProps) {
         <section class="flex flex-col gap-4">
           <div class="flex items-center justify-between px-1">
             <span class="text-xs font-medium uppercase tracking-[0.2em] text-muted">
-              {totalPlayers()} player{totalPlayers() !== 1 ? 's' : ''}
+              Players
             </span>
-            <span class="flex items-center gap-1.5 text-xs text-muted">
-              <span class="size-1.5 rounded-full bg-success" />
-              <span class="tabular-nums">{readyCount()} ready</span>
+            <span class="text-xs tabular-nums text-muted">
+              {readyCount()} / {totalPlayers()} ready
             </span>
           </div>
 
@@ -127,47 +127,48 @@ export default function Lobby(props: LobbyProps) {
                   return (
                     <li
                       class={cn(
-                        'flex items-center justify-between border border-border bg-surface px-4 py-3',
-                        isYou && 'border-witness/40'
+                        'flex items-center justify-between border px-4 py-3 transition-colors',
+                        player.isReady
+                          ? 'border-success/40 bg-success/5'
+                          : 'border-border bg-surface',
+                        isYou && !player.isReady && 'border-witness/40',
+                        player.connectionStatus === 'dropped' && 'opacity-50'
                       )}
                     >
                       <div class="flex items-center gap-3">
                         <div
                           class={cn(
                             'flex size-9 items-center justify-center text-xs font-semibold',
-                            player.isReady ? 'ring-2' : '',
                             color.bg,
-                            color.text,
-                            player.isReady && color.ring
+                            color.text
                           )}
                         >
                           {player.name.slice(0, 2).toUpperCase()}
                         </div>
-                        <div class="flex items-center gap-2">
-                          <span class="font-medium text-text">{player.name}</span>
-                          <Show when={player.isHost}>
-                            <span class="border border-witness/30 bg-witness/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-witness">
-                              Host
-                            </span>
-                          </Show>
-                          <Show when={isYou && !player.isHost}>
-                            <span class="text-xs text-muted">(you)</span>
-                          </Show>
+                        <div class="flex flex-col gap-0.5">
+                          <div class="flex items-center gap-2">
+                            <span class="font-medium text-text">{player.name}</span>
+                            <Show when={player.isHost}>
+                              <span class="border border-witness/30 bg-witness/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-witness">
+                                Host
+                              </span>
+                            </Show>
+                            <Show when={isYou && !player.isHost}>
+                              <span class="text-xs text-muted">(you)</span>
+                            </Show>
+                          </div>
+                          <span
+                            class={cn(
+                              'text-xs',
+                              player.isReady ? 'text-success' : 'text-muted'
+                            )}
+                          >
+                            {player.isReady ? 'Ready to play' : 'Not ready'}
+                          </span>
                         </div>
                       </div>
-                      <Show when={player.isReady}>
-                        <svg
-                          class="size-5 text-success"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          aria-hidden="true"
-                        >
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
+                      <Show when={player.connectionStatus !== 'connected'}>
+                        <ConnectionIndicator status={player.connectionStatus} showLabel />
                       </Show>
                     </li>
                   );

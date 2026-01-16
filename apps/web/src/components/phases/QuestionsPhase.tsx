@@ -1,5 +1,7 @@
 import { For, Show, createMemo } from 'solid-js';
 import Timer from '../Timer';
+import ConnectionIndicator from '../ConnectionIndicator';
+import { cn } from '../../lib/cn';
 import { game } from '../../stores/game';
 
 export default function QuestionsPhase() {
@@ -49,12 +51,20 @@ export default function QuestionsPhase() {
                 {({ player, answer }) => {
                   const isYou = player.id === game.playerId;
                   return (
-                    <li class="border border-border bg-surface">
+                    <li
+                      class={cn(
+                        'border border-border bg-surface',
+                        player.connectionStatus === 'dropped' && 'opacity-50'
+                      )}
+                    >
                       <div class="flex items-center justify-between border-b border-border px-4 py-2">
                         <div class="flex items-center gap-2">
                           <span class="font-medium text-text">{player.name}</span>
                           <Show when={isYou}>
                             <span class="text-xs text-muted">(you)</span>
+                          </Show>
+                          <Show when={player.connectionStatus !== 'connected'}>
+                            <ConnectionIndicator status={player.connectionStatus} />
                           </Show>
                         </div>
                         <Show when={player.isHost}>
@@ -67,7 +77,11 @@ export default function QuestionsPhase() {
                         <Show
                           when={answer}
                           fallback={
-                            <p class="text-sm italic text-muted">No answer submitted</p>
+                            <p class="text-sm italic text-muted">
+                              {player.connectionStatus === 'dropped'
+                                ? 'Player disconnected'
+                                : 'No answer submitted'}
+                            </p>
                           }
                         >
                           <p class="text-sm text-text">{answer}</p>

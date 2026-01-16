@@ -1,4 +1,6 @@
 import { For, Show, createMemo } from 'solid-js';
+import ConnectionIndicator from '../ConnectionIndicator';
+import { cn } from '../../lib/cn';
 import { game } from '../../stores/game';
 import { continueGame } from '../../lib/game-client';
 
@@ -76,17 +78,27 @@ export default function ResultsPhase() {
                   const isYou = player.id === game.playerId;
                   const position = index() + 1;
                   return (
-                    <li class="flex items-center justify-between border border-border px-4 py-3">
+                    <li
+                      class={cn(
+                        'flex items-center justify-between border border-border px-4 py-3',
+                        player.connectionStatus === 'dropped' && 'opacity-50'
+                      )}
+                    >
                       <div class="flex items-center gap-3">
                         <span class="flex size-6 items-center justify-center text-xs font-bold text-muted">
                           {position}
                         </span>
-                        <span class="font-medium text-text">
-                          {player.name}
-                          <Show when={isYou}>
-                            <span class="text-muted"> (you)</span>
+                        <div class="flex items-center gap-2">
+                          <span class="font-medium text-text">
+                            {player.name}
+                            <Show when={isYou}>
+                              <span class="text-muted"> (you)</span>
+                            </Show>
+                          </span>
+                          <Show when={player.connectionStatus !== 'connected'}>
+                            <ConnectionIndicator status={player.connectionStatus} />
                           </Show>
-                        </span>
+                        </div>
                       </div>
                       <span class="font-bold tabular-nums text-text">
                         {player.score ?? 0}

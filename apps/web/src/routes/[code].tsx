@@ -5,6 +5,7 @@ import { reconnectToRoom } from '../lib/game-client';
 import { getSession } from '../lib/storage';
 import Lobby from '../components/Lobby';
 import JoinForm from '../components/JoinForm';
+import MyConnectionStatus from '../components/MyConnectionStatus';
 import MemoryPhase from '../components/phases/MemoryPhase';
 import RolesPhase from '../components/phases/RolesPhase';
 import DetailsPhase from '../components/phases/DetailsPhase';
@@ -61,6 +62,7 @@ export default function Room() {
       </Show>
 
       <Show when={!isLoading() && game.playerId}>
+        <MyConnectionStatus />
         <Switch fallback={<Lobby roomCode={params.code.toUpperCase()} />}>
           <Match when={game.phase === 'lobby'}>
             <Lobby roomCode={params.code.toUpperCase()} />

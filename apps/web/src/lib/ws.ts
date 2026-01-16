@@ -3,11 +3,13 @@ import { HEARTBEAT_INTERVAL } from '@dejavu/shared';
 
 type MessageHandler = (message: ServerMessage) => void;
 type StatusHandler = (status: 'connecting' | 'connected' | 'disconnected' | 'error') => void;
+type LatencyHandler = (latency: number, timestamp: number) => void;
 
 interface WebSocketClientOptions {
   url: string;
   onMessage: MessageHandler;
   onStatusChange: StatusHandler;
+  onLatencyUpdate?: LatencyHandler;
 }
 
 export class WebSocketClient {
@@ -17,9 +19,17 @@ export class WebSocketClient {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private options: WebSocketClientOptions;
+  private lastPingTime = 0;
 
   constructor(options: WebSocketClientOptions) {
     this.options = options;
+  }
+
+  handlePong(): void {
+    if (this.lastPingTime > 0) {
+      const latency = Date.now() - this.lastPingTime;
+      this.options.onLatencyUpdate?.(latency, Date.now());
+    }
   }
 
   connect(): void {
@@ -77,9 +87,10 @@ export class WebSocketClient {
 
   private startHeartbeat(): void {
     this.pingInterval = window.setInterval(() => {
+      this.lastPingTime = Date.now();
       this.send({
         type: 'ping',
-        payload: { clientTime: Date.now() },
+        payload: { clientTime: this.lastPingTime },
       });
     }, HEARTBEAT_INTERVAL);
   }

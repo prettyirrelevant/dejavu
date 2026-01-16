@@ -271,6 +271,7 @@ function handleMessage(message: ServerMessage): void {
     }
 
     case 'pong':
+      client?.handlePong();
       break;
 
     case 'error': {
@@ -282,6 +283,10 @@ function handleMessage(message: ServerMessage): void {
 
 function handleStatusChange(status: 'connecting' | 'connected' | 'disconnected' | 'error'): void {
   setConnection({ status });
+}
+
+function handleLatencyUpdate(latency: number, timestamp: number): void {
+  setConnection({ latency, lastPong: timestamp });
 }
 
 export async function createAndJoinRoom(playerName: string, config: RoomConfig): Promise<string> {
@@ -337,6 +342,7 @@ async function connectToRoom(roomCode: string): Promise<void> {
     url,
     onMessage: handleMessage,
     onStatusChange: handleStatusChange,
+    onLatencyUpdate: handleLatencyUpdate,
   });
 
   client.connect();
