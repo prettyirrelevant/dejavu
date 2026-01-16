@@ -12,5 +12,9 @@ new_classes = ["GameRoom"]
 [ai]
 binding = "AI"
 
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "dejavu_analytics"
+
 [vars]
 CALLS_APP_ID = ""

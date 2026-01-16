@@ -6,6 +6,7 @@ import type { GameRoom } from './room';
 export interface Env {
   GAME_ROOM: DurableObjectNamespace<GameRoom>;
   AI: Ai;
+  ANALYTICS: AnalyticsEngineDataset;
   CALLS_APP_ID: string;
   CALLS_APP_SECRET: string;
 }

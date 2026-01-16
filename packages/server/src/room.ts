@@ -270,6 +270,7 @@ export class GameRoom extends DurableObject<Env> {
     };
 
     this.send(ws, response);
+    this.track('player_joined', { isSpectator: payload.asSpectator ? 1 : 0 });
 
     const joinedMessage: ServerMessage = {
       type: 'player_joined',
@@ -292,6 +293,7 @@ export class GameRoom extends DurableObject<Env> {
     }
 
     this.state.config = payload.config;
+    this.track('room_created', { rounds: payload.config.rounds, maxPlayers: payload.config.maxPlayers });
     await this.handleJoinRoom(ws, {
       roomCode: this.state.roomCode,
       playerName: payload.playerName,
@@ -338,6 +340,11 @@ export class GameRoom extends DurableObject<Env> {
     this.state.gameState = 'playing';
     this.state.currentRound = 1;
     await this.persistState();
+
+    this.track('game_started', { 
+      playerCount: this.state.players.size, 
+      rounds: this.state.config.rounds 
+    });
 
     const message: ServerMessage = {
       type: 'game_started',
@@ -834,6 +841,12 @@ export class GameRoom extends DurableObject<Env> {
   private async endGame(reason: 'completed' | 'insufficient_players' | 'host_ended'): Promise<void> {
     if (!this.state) return;
 
+    this.track('game_finished', { 
+      reason, 
+      roundsCompleted: this.state.currentRound,
+      playerCount: this.state.players.size 
+    });
+
     this.state.gameState = 'finished';
     this.state.currentPhase = 'lobby';
     await this.persistState();
@@ -894,6 +907,16 @@ export class GameRoom extends DurableObject<Env> {
     return `${this.state.roomCode}.${playerId}.${timestamp}.${random}`;
   }
 
+  private track(event: string, data: Record<string, string | number> = {}): void {
+    try {
+      this.env.ANALYTICS.writeDataPoint({
+        blobs: [event, this.state?.roomCode || '', ...Object.values(data).filter((v): v is string => typeof v === 'string')],
+        doubles: Object.values(data).filter((v): v is number => typeof v === 'number'),
+        indexes: [event],
+      });
+    } catch {}
+  }
+
   private send(ws: WebSocket, message: ServerMessage): void {
     try {
       ws.send(JSON.stringify(message));
@@ -925,6 +948,7 @@ export class GameRoom extends DurableObject<Env> {
 interface Env {
   GAME_ROOM: DurableObjectNamespace<GameRoom>;
   AI: Ai;
+  ANALYTICS: AnalyticsEngineDataset;
   CALLS_APP_ID: string;
   CALLS_APP_SECRET: string;
 }
