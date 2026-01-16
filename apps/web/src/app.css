@@ -2,18 +2,25 @@
 
 @theme {
   --font-grotesk: 'Space Grotesk', system-ui, sans-serif;
-  --color-background: #0a0a0b;
-  --color-surface: #141416;
-  --color-surface-elevated: #1a1a1d;
-  --color-text: #fafafa;
-  --color-muted: #71717a;
-  --color-border: #27272a;
-  --color-border-subtle: #1f1f23;
-  --color-witness: #f59e0b;
+  
+  /* Notebook paper palette - warm cream tones */
+  --color-background: #FFFEF9;
+  --color-surface: #FAF9F4;
+  --color-surface-elevated: #F5F4EF;
+  --color-text: #1a1a1a;
+  --color-muted: #6b6b6b;
+  --color-border: #d4d4d4;
+  --color-border-subtle: #e8e8e8;
+  
+  /* Accent colors preserved */
+  --color-witness: #d97706;
   --color-witness-muted: #b45309;
-  --color-imposter: #52525b;
-  --color-success: #22c55e;
-  --color-error: #ef4444;
+  --color-imposter: #78716c;
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+  
+  /* Notebook line color */
+  --color-line: #c9c9c9;
 }
 
 html {
@@ -24,40 +31,123 @@ body {
   font-family: var(--font-grotesk);
 }
 
-.noise-texture {
+/* Paper texture - subtle grain for aged paper feel */
+.paper-texture {
   position: relative;
+  background-color: var(--color-background);
 }
 
-.noise-texture::before {
+.paper-texture::before {
   content: '';
   position: absolute;
   inset: 0;
-  opacity: 0.015;
+  opacity: 0.025;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-repeat: repeat;
 }
 
+/* Notebook ruled lines - horizontal dotted lines */
+.ruled-paper {
+  position: relative;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 31px,
+    var(--color-line) 31px,
+    var(--color-line) 32px
+  );
+  background-size: 100% 32px;
+}
+
+/* Alternative: dotted ruled lines for subtler effect */
+.ruled-paper-dotted {
+  position: relative;
+}
+
+.ruled-paper-dotted::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 31px,
+    transparent 31px,
+    transparent 32px
+  );
+  background-size: 100% 32px;
+  border-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 31px,
+    var(--color-line) 31px,
+    var(--color-line) 32px
+  ) 1;
+}
+
+/* Notebook margin effect - classic paper margin lines */
+.notebook-margin {
+  position: relative;
+}
+
+.notebook-margin::before,
+.notebook-margin::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  pointer-events: none;
+}
+
+/* Primary margin line */
+.notebook-margin::before {
+  left: 1.25rem;
+  border-left: 1.5px dotted var(--color-line);
+  opacity: 0.5;
+}
+
+/* Secondary margin line */
+.notebook-margin::after {
+  left: 1.75rem;
+  border-left: 1px dotted var(--color-line);
+  opacity: 0.3;
+}
+
+@media (min-width: 768px) {
+  .notebook-margin::before {
+    left: 2rem;
+  }
+  .notebook-margin::after {
+    left: 2.625rem;
+  }
+}
+
+/* Sharp card with thin border - notebook aesthetic */
+.card-paper {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+/* Legacy support - remove shadow effect */
 .card-elevated {
-  box-shadow:
-    0 0 0 1px var(--color-border-subtle),
-    0 2px 4px -1px rgba(0, 0, 0, 0.3),
-    0 4px 8px -2px rgba(0, 0, 0, 0.25),
-    0 8px 16px -4px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-border);
+  box-shadow: none;
 }
 
 .card-elevated:hover {
-  box-shadow:
-    0 0 0 1px var(--color-border),
-    0 2px 4px -1px rgba(0, 0, 0, 0.35),
-    0 4px 8px -2px rgba(0, 0, 0, 0.3),
-    0 12px 24px -6px rgba(0, 0, 0, 0.25);
+  border-color: var(--color-muted);
+  box-shadow: none;
 }
 
+/* Typography */
 .title-dramatic {
   letter-spacing: 0.35em;
   font-weight: 200;
   font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  color: var(--color-text);
 }
 
 .room-code-display {
@@ -67,38 +157,41 @@ body {
   font-weight: 500;
 }
 
+/* Form inputs - clean notebook style */
 .input-field {
   font-family: var(--font-grotesk);
   background-color: var(--color-background);
   border: 1px solid var(--color-border);
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color 150ms ease;
 }
 
 .input-field:focus {
-  border-color: var(--color-muted);
-  box-shadow: 0 0 0 3px rgba(113, 113, 122, 0.1);
+  border-color: var(--color-text);
+  box-shadow: none;
   outline: none;
 }
 
 .input-field:hover:not(:focus) {
-  border-color: #3f3f46;
+  border-color: var(--color-muted);
 }
 
+/* Primary button - solid dark */
 .btn-primary {
   font-family: var(--font-grotesk);
   background-color: var(--color-text);
   color: var(--color-background);
-  transition: transform 100ms ease, opacity 100ms ease;
+  transition: opacity 100ms ease, transform 100ms ease;
 }
 
 .btn-primary:hover:not(:disabled) {
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 .btn-primary:active:not(:disabled) {
   transform: scale(0.98);
 }
 
+/* Secondary button - outlined */
 .btn-secondary {
   font-family: var(--font-grotesk);
   background-color: transparent;
@@ -112,30 +205,36 @@ body {
   border-color: var(--color-muted);
 }
 
+/* Witness/accent button */
 .btn-witness {
   font-family: var(--font-grotesk);
   background-color: var(--color-witness);
-  color: var(--color-background);
+  color: #fff;
   transition: transform 100ms ease, filter 100ms ease;
 }
 
 .btn-witness:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.05);
 }
 
 .btn-witness:active:not(:disabled) {
   transform: scale(0.98);
 }
 
+/* Avatar ring */
 .avatar-ring {
   box-shadow: 0 0 0 2px var(--color-background), 0 0 0 3px currentColor;
 }
 
+/* Subtle divider - dotted line */
 .divider-subtle {
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+  border: none;
+  border-top: 1px dotted var(--color-border);
+  background: transparent;
 }
 
+/* Animations */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
@@ -153,4 +252,35 @@ body {
 .animate-slide-down {
   animation: slide-down 300ms ease-out forwards;
   overflow: hidden;
+}
+
+/* Utility: remove noise texture (keeping for backwards compat) */
+.noise-texture {
+  position: relative;
+}
+
+.noise-texture::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.02;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* Tab selector - sharp edges */
+.tab-selector {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.tab-selector-item {
+  transition: background-color 100ms ease, color 100ms ease;
+}
+
+.tab-selector-item.active {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  margin: -1px;
 }

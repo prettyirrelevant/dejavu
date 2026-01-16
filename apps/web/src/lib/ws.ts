@@ -37,8 +37,11 @@ export class WebSocketClient {
       this.ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data) as ServerMessage;
+          console.log('[WS] Received:', message.type, message);
           this.options.onMessage(message);
-        } catch {}
+        } catch (e) {
+          console.error('[WS] Parse error:', e);
+        }
       };
 
       this.ws.onclose = () => {

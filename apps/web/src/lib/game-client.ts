@@ -8,6 +8,7 @@ import { WebSocketClient } from './ws';
 let client: WebSocketClient | null = null;
 
 function handleMessage(message: ServerMessage): void {
+  console.log('[GameClient] Handling:', message.type);
   switch (message.type) {
     case 'room_created': {
       const { roomCode, sessionToken, playerId, isHost, config } = message.payload;
@@ -55,12 +56,26 @@ function handleMessage(message: ServerMessage): void {
 
     case 'player_joined': {
       const { player, isSpectator } = message.payload;
-      setGame((prev) => ({
-        ...prev,
-        ...(isSpectator
-          ? { spectators: [...prev.spectators, player] }
-          : { players: [...prev.players, player] }),
-      }));
+      console.log('[GameClient] Player joined:', player.name, 'id:', player.id, 'isSpectator:', isSpectator);
+      setGame((prev) => {
+        const alreadyExists = isSpectator 
+          ? prev.spectators.some(p => p.id === player.id)
+          : prev.players.some(p => p.id === player.id);
+        
+        if (alreadyExists) {
+          console.log('[GameClient] Player already exists, skipping');
+          return prev;
+        }
+        
+        const updated = {
+          ...prev,
+          ...(isSpectator
+            ? { spectators: [...prev.spectators, player] }
+            : { players: [...prev.players, player] }),
+        };
+        console.log('[GameClient] Updated players:', updated.players.map(p => p.name));
+        return updated;
+      });
       break;
     }
 
@@ -225,15 +240,19 @@ function handleMessage(message: ServerMessage): void {
 
     case 'reconnect_success': {
       const { currentPhase, roundNumber, yourRole, yourFragments, yourHints, players } = message.payload;
-      setGame((prev) => ({
-        ...prev,
-        phase: currentPhase,
-        round: roundNumber,
-        role: yourRole || null,
-        fragments: yourFragments || [],
-        hints: yourHints || [],
-        players: players || prev.players,
-      }));
+      setGame((prev) => {
+        const currentPlayer = players?.find((p) => p.id === prev.playerId);
+        return {
+          ...prev,
+          phase: currentPhase,
+          round: roundNumber,
+          role: yourRole || null,
+          fragments: yourFragments || [],
+          hints: yourHints || [],
+          players: players || prev.players,
+          isHost: currentPlayer?.isHost ?? prev.isHost,
+        };
+      });
       break;
     }
 
@@ -276,6 +295,12 @@ export async function joinRoom(roomCode: string, playerName: string, asSpectator
 export async function reconnectToRoom(roomCode: string): Promise<boolean> {
   const session = getSession(roomCode);
   if (!session) return false;
+
+  setGame((prev) => ({
+    ...prev,
+    roomCode,
+    playerId: session.playerId,
+  }));
 
   await connectToRoom(roomCode);
   

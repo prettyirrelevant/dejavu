@@ -72,7 +72,7 @@ export default function CreateForm() {
           placeholder="What should we call you?"
           maxLength={PLAYER_NAME_MAX}
           class={cn(
-            'input-field h-12 w-full rounded-xl px-4',
+            'input-field h-12 w-full px-4',
             'text-base text-text placeholder:text-muted/50'
           )}
         />
@@ -88,10 +88,10 @@ export default function CreateForm() {
               type="button"
               onClick={() => setRounds(num)}
               class={cn(
-                'h-12 rounded-xl text-sm font-medium transition-all duration-100',
+                'h-12 text-sm font-medium transition-all duration-100',
                 rounds() === num
-                  ? 'bg-surface-elevated text-text ring-1 ring-border'
-                  : 'bg-background text-muted hover:text-text'
+                  ? 'border border-text bg-background text-text'
+                  : 'border border-border bg-surface text-muted hover:text-text hover:border-muted'
               )}
             >
               {num === 3 ? 'Quick · 3' : num === 5 ? 'Standard · 5' : 'Long · 7'}
@@ -138,10 +138,10 @@ export default function CreateForm() {
                   type="button"
                   onClick={() => setTimeScale(option.value)}
                   class={cn(
-                    'h-12 rounded-xl text-sm font-medium transition-all duration-100',
+                    'h-12 text-sm font-medium transition-all duration-100',
                     timeScale() === option.value
-                      ? 'bg-surface-elevated text-text ring-1 ring-border'
-                      : 'bg-background text-muted hover:text-text'
+                      ? 'border border-text bg-background text-text'
+                      : 'border border-border bg-surface text-muted hover:text-text hover:border-muted'
                   )}
                 >
                   {option.label}
@@ -163,10 +163,10 @@ export default function CreateForm() {
                   type="button"
                   onClick={() => setMaxPlayers(num)}
                   class={cn(
-                    'h-12 rounded-xl text-sm font-medium transition-all duration-100',
+                    'h-12 text-sm font-medium transition-all duration-100',
                     maxPlayers() === num
-                      ? 'bg-surface-elevated text-text ring-1 ring-border'
-                      : 'bg-background text-muted hover:text-text'
+                      ? 'border border-text bg-background text-text'
+                      : 'border border-border bg-surface text-muted hover:text-text hover:border-muted'
                   )}
                 >
                   Up to {num}
@@ -185,10 +185,10 @@ export default function CreateForm() {
                   type="button"
                   onClick={() => setWitnessCount(val)}
                   class={cn(
-                    'h-12 rounded-xl text-sm font-medium transition-all duration-100',
+                    'h-12 text-sm font-medium transition-all duration-100',
                     witnessCount() === val
-                      ? 'bg-surface-elevated text-text ring-1 ring-border'
-                      : 'bg-background text-muted hover:text-text'
+                      ? 'border border-text bg-background text-text'
+                      : 'border border-border bg-surface text-muted hover:text-text hover:border-muted'
                   )}
                 >
                   {val === 'auto' ? 'Auto' : val}
@@ -214,14 +214,14 @@ export default function CreateForm() {
                 aria-checked={allowSpectators()}
                 onClick={() => setAllowSpectators(!allowSpectators())}
                 class={cn(
-                  'relative h-7 w-12 shrink-0 rounded-full transition-colors duration-100',
-                  allowSpectators() ? 'bg-witness' : 'bg-border'
+                  'relative h-6 w-10 shrink-0 border transition-colors duration-100',
+                  allowSpectators() ? 'bg-witness border-witness' : 'bg-surface-elevated border-border'
                 )}
               >
                 <span
                   class={cn(
-                    'absolute top-1 left-1 h-5 w-5 rounded-full bg-white transition-transform duration-100',
-                    allowSpectators() && 'translate-x-5'
+                    'absolute top-0.5 left-0.5 h-4 w-4 bg-background border border-border transition-transform duration-100',
+                    allowSpectators() && 'translate-x-4 border-witness/50'
                   )}
                 />
               </button>
@@ -238,14 +238,14 @@ export default function CreateForm() {
                 aria-checked={voiceEnabled()}
                 onClick={() => setVoiceEnabled(!voiceEnabled())}
                 class={cn(
-                  'relative h-7 w-12 shrink-0 rounded-full transition-colors duration-100',
-                  voiceEnabled() ? 'bg-witness' : 'bg-border'
+                  'relative h-6 w-10 shrink-0 border transition-colors duration-100',
+                  voiceEnabled() ? 'bg-witness border-witness' : 'bg-surface-elevated border-border'
                 )}
               >
                 <span
                   class={cn(
-                    'absolute top-1 left-1 h-5 w-5 rounded-full bg-white transition-transform duration-100',
-                    voiceEnabled() && 'translate-x-5'
+                    'absolute top-0.5 left-0.5 h-4 w-4 bg-background border border-border transition-transform duration-100',
+                    voiceEnabled() && 'translate-x-4 border-witness/50'
                   )}
                 />
               </button>
@@ -255,14 +255,14 @@ export default function CreateForm() {
       </Show>
 
       <Show when={error()}>
-        <p class="animate-fade-in rounded-lg bg-error/10 px-4 py-3 text-sm text-error">{error()}</p>
+        <p class="animate-fade-in border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">{error()}</p>
       </Show>
 
       <button
         type="submit"
         disabled={isSubmitting()}
         class={cn(
-          'btn-primary flex h-14 items-center justify-center gap-2 rounded-xl',
+          'btn-primary flex h-14 items-center justify-center gap-2',
           'text-base font-semibold',
           'disabled:cursor-not-allowed disabled:opacity-40'
         )}

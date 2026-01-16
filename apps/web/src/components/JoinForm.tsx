@@ -6,9 +6,13 @@ import { user, setUser } from '../stores/user';
 import { joinRoom } from '../lib/game-client';
 import { setName } from '../lib/storage';
 
-export default function JoinForm() {
+interface JoinFormProps {
+  roomCode?: string;
+}
+
+export default function JoinForm(props: JoinFormProps) {
   const navigate = useNavigate();
-  const [roomCode, setRoomCode] = createSignal('');
+  const [roomCode, setRoomCode] = createSignal(props.roomCode ?? '');
   const [playerName, setPlayerName] = createSignal(user.name);
   const [joinAsSpectator, setJoinAsSpectator] = createSignal(false);
   const [isSubmitting, setIsSubmitting] = createSignal(false);
@@ -42,10 +46,12 @@ export default function JoinForm() {
       return;
     }
 
-    const codeError = validateRoomCode(roomCode());
-    if (codeError) {
-      setError(codeError);
-      return;
+    if (!props.roomCode) {
+      const codeError = validateRoomCode(roomCode());
+      if (codeError) {
+        setError(codeError);
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -56,7 +62,9 @@ export default function JoinForm() {
 
       await joinRoom(roomCode(), playerName(), joinAsSpectator());
 
-      navigate(`/${roomCode()}`);
+      if (!props.roomCode) {
+        navigate(`/${roomCode()}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to join room');
       setIsSubmitting(false);
@@ -65,32 +73,34 @@ export default function JoinForm() {
 
   return (
     <form onSubmit={handleSubmit} class="flex flex-col gap-6">
-      <div class="flex flex-col gap-2">
-        <label for="room-code" class="text-sm font-medium text-text">
-          Game code
-        </label>
-        <input
-          id="room-code"
-          type="text"
-          value={roomCode()}
-          onInput={(e) => handleRoomCodeInput(e.currentTarget.value)}
-          placeholder="XXXXXX"
-          maxLength={ROOM_CODE_LENGTH}
-          autocomplete="off"
-          autocapitalize="characters"
-          spellcheck={false}
-          class={cn(
-            'input-field room-code-display h-14 w-full rounded-xl px-4',
-            'text-center text-xl text-text placeholder:text-muted/30',
-            'uppercase'
-          )}
-        />
-        <p class="text-center text-xs text-muted">
-          Ask the host for the code
-        </p>
-      </div>
+      <Show when={!props.roomCode}>
+        <div class="flex flex-col gap-2">
+          <label for="room-code" class="text-sm font-medium text-text">
+            Game code
+          </label>
+          <input
+            id="room-code"
+            type="text"
+            value={roomCode()}
+            onInput={(e) => handleRoomCodeInput(e.currentTarget.value)}
+            placeholder="XXXXXX"
+            maxLength={ROOM_CODE_LENGTH}
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck={false}
+            class={cn(
+              'input-field room-code-display h-14 w-full px-4',
+              'text-center text-xl text-text placeholder:text-muted/30',
+              'uppercase'
+            )}
+          />
+          <p class="text-center text-xs text-muted">
+            Ask the host for the code
+          </p>
+        </div>
 
-      <div class="divider-subtle" />
+        <div class="divider-subtle" />
+      </Show>
 
       <div class="flex flex-col gap-2">
         <label for="join-player-name" class="text-sm font-medium text-text">
@@ -104,7 +114,7 @@ export default function JoinForm() {
           placeholder="What should we call you?"
           maxLength={PLAYER_NAME_MAX}
           class={cn(
-            'input-field h-12 w-full rounded-xl px-4',
+            'input-field h-12 w-full px-4',
             'text-base text-text placeholder:text-muted/50'
           )}
         />
@@ -113,14 +123,14 @@ export default function JoinForm() {
       <label class="flex min-h-11 cursor-pointer items-center gap-3">
         <div
           class={cn(
-            'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors duration-100',
+            'flex h-5 w-5 shrink-0 items-center justify-center border transition-colors duration-100',
             joinAsSpectator()
               ? 'border-witness bg-witness'
               : 'border-border bg-background hover:border-muted'
           )}
         >
           <Show when={joinAsSpectator()}>
-            <svg class="h-3 w-3 text-background" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="h-3 w-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </Show>
@@ -138,14 +148,14 @@ export default function JoinForm() {
       </label>
 
       <Show when={error()}>
-        <p class="animate-fade-in rounded-lg bg-error/10 px-4 py-3 text-sm text-error">{error()}</p>
+        <p class="animate-fade-in border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">{error()}</p>
       </Show>
 
       <button
         type="submit"
         disabled={isSubmitting()}
         class={cn(
-          'btn-primary flex h-14 items-center justify-center gap-2 rounded-xl',
+          'btn-primary flex h-14 items-center justify-center gap-2',
           'text-base font-semibold',
           'disabled:cursor-not-allowed disabled:opacity-40'
         )}

@@ -21,10 +21,10 @@ export default function Timer(props: TimerProps) {
   return (
     <div
       class={cn(
-        'flex items-center justify-center rounded-lg px-4 py-2',
-        'border border-neutral-800 bg-surface',
-        isLow() && !isCritical() && 'border-amber-500/50 bg-amber-500/10',
-        isCritical() && 'animate-pulse border-red-500/50 bg-red-500/10',
+        'flex items-center justify-center px-4 py-2',
+        'border border-border bg-surface',
+        isLow() && !isCritical() && 'border-amber-600/50 bg-amber-50',
+        isCritical() && 'animate-pulse border-red-600/50 bg-red-50',
         props.class
       )}
     >
@@ -32,8 +32,8 @@ export default function Timer(props: TimerProps) {
         class={cn(
           'text-2xl font-bold tabular-nums tracking-wider',
           'text-text',
-          isLow() && !isCritical() && 'text-amber-500',
-          isCritical() && 'text-red-500'
+          isLow() && !isCritical() && 'text-amber-600',
+          isCritical() && 'text-red-600'
         )}
       >
         {formattedTime()}

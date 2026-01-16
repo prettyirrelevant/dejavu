@@ -3,7 +3,7 @@ import { cn } from '../../lib/cn';
 
 export default function DetailsPhase() {
   return (
-    <div class="flex min-h-dvh flex-col px-4 py-6 md:px-6 md:py-8">
+    <div class="noise-texture notebook-margin min-h-dvh bg-background px-4 py-6 md:px-6 md:py-8">
       <div class="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8">
         <header class="flex items-center justify-between">
           <h1 class="text-balance text-xl font-bold tracking-tight text-text">
@@ -15,7 +15,7 @@ export default function DetailsPhase() {
         <div class="flex flex-1 items-center justify-center">
           <div
             class={cn(
-              'flex flex-col items-center gap-4 rounded-xl border border-neutral-800 bg-surface p-8',
+              'flex flex-col items-center gap-4 border border-border bg-surface p-8',
               'text-center'
             )}
           >
