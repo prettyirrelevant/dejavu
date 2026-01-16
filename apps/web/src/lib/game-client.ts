@@ -100,6 +100,20 @@ function handleMessage(message: ServerMessage): void {
       break;
     }
 
+    case 'player_connection_changed': {
+      const { playerId, status } = message.payload;
+      setGame((prev) => ({
+        ...prev,
+        players: prev.players.map((p) =>
+          p.id === playerId ? { ...p, connectionStatus: status } : p
+        ),
+        spectators: prev.spectators.map((p) =>
+          p.id === playerId ? { ...p, connectionStatus: status } : p
+        ),
+      }));
+      break;
+    }
+
     case 'host_transferred': {
       const { newHostId } = message.payload;
       setGame((prev) => ({

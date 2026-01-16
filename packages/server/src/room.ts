@@ -453,6 +453,11 @@ export class GameRoom extends DurableObject<Env> {
     const player = this.state.players.get(playerId) || this.state.spectators.get(playerId);
     if (!player) return;
 
+    if (this.state.gameState === 'lobby') {
+      await this.removePlayer(playerId, 'disconnected');
+      return;
+    }
+
     player.connectionStatus = 'dropped';
     await this.persistState();
 
