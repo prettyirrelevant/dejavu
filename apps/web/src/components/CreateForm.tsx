@@ -14,7 +14,6 @@ export default function CreateForm() {
   const [maxPlayers, setMaxPlayers] = createSignal<number>(6);
   const [witnessCount, setWitnessCount] = createSignal<'auto' | 1 | 2>('auto');
   const [allowSpectators, setAllowSpectators] = createSignal<boolean>(true);
-  const [voiceEnabled, setVoiceEnabled] = createSignal<boolean>(true);
   const [isSubmitting, setIsSubmitting] = createSignal(false);
   const [error, setError] = createSignal('');
   const [showAdvanced, setShowAdvanced] = createSignal(false);
@@ -48,7 +47,7 @@ export default function CreateForm() {
         maxPlayers: maxPlayers(),
         witnessCount: witnessCount(),
         allowSpectators: allowSpectators(),
-        voiceEnabled: voiceEnabled(),
+        voiceEnabled: false,
       });
 
       navigate(`/${roomCode}`);
@@ -227,29 +226,22 @@ export default function CreateForm() {
               </button>
             </label>
 
-            <label class="flex min-h-11 cursor-pointer items-center justify-between">
+            <div class="flex min-h-11 items-center justify-between opacity-50">
               <div class="flex flex-col gap-0.5">
-                <span class="text-sm font-medium text-text">Voice chat</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium text-text">Voice chat</span>
+                  <span class="border border-border px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted">
+                    Coming soon
+                  </span>
+                </div>
                 <span class="text-xs text-muted">Built-in voice for the group</span>
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={voiceEnabled()}
-                onClick={() => setVoiceEnabled(!voiceEnabled())}
-                class={cn(
-                  'relative h-6 w-10 shrink-0 border transition-colors duration-100',
-                  voiceEnabled() ? 'bg-witness border-witness' : 'bg-surface-elevated border-border'
-                )}
+              <div
+                class="relative h-6 w-10 shrink-0 border border-border bg-surface-elevated cursor-not-allowed"
               >
-                <span
-                  class={cn(
-                    'absolute top-0.5 left-0.5 h-4 w-4 bg-background border border-border transition-transform duration-100',
-                    voiceEnabled() && 'translate-x-4 border-witness/50'
-                  )}
-                />
-              </button>
-            </label>
+                <span class="absolute top-0.5 left-0.5 h-4 w-4 bg-background border border-border" />
+              </div>
+            </div>
           </div>
         </div>
       </Show>

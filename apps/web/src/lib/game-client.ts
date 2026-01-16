@@ -1,5 +1,6 @@
 import type { ClientMessage, RoomConfig, ServerMessage } from '@dejavu/shared';
 import toast from 'solid-toast';
+import confetti from 'canvas-confetti';
 import { createRoom, getWebSocketUrl } from './api';
 import { setSession, getSession } from './storage';
 import { setGame, resetGame } from '../stores/game';
@@ -251,6 +252,25 @@ function handleMessage(message: ServerMessage): void {
       }));
       if (reason === 'completed' && winner?.name) {
         toast.success(`Game over! ${winner.name} wins!`);
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+        setTimeout(() => {
+          confetti({
+            particleCount: 100,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 },
+          });
+          confetti({
+            particleCount: 100,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 },
+          });
+        }, 250);
       } else if (reason === 'insufficient_players') {
         toast.error('Game ended: not enough players');
       } else if (reason === 'host_ended') {
