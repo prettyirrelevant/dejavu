@@ -1,0 +1,17 @@
+{
+  "name": "dejavu",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:web": "pnpm --filter @dejavu/web dev",
+    "dev:server": "pnpm --filter @dejavu/server dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "oxlint --deny-warnings",
+    "deploy": "pnpm --filter @dejavu/server deploy"
+  },
+  "devDependencies": {
+    "oxlint": "^1.39.0",
+    "typescript": "^5.8.3"
+  }
+}

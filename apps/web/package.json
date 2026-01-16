@@ -1,0 +1,25 @@
+{
+  "name": "@dejavu/web",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dejavu/shared": "workspace:*",
+    "@solidjs/router": "^0.15.0",
+    "clsx": "^2.1.1",
+    "solid-js": "^1.9.0",
+    "tailwind-merge": "^3.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.2.0",
+    "vite-plugin-solid": "^2.11.0"
+  }
+}

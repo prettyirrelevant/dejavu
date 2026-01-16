@@ -1,0 +1,281 @@
+import { createSignal, Show } from 'solid-js';
+import type { RoomConfig } from '@dejavu/shared';
+import { PLAYER_NAME_REGEX, PLAYER_NAME_MIN, PLAYER_NAME_MAX } from '@dejavu/shared';
+import { cn } from '../lib/cn';
+import { user } from '../stores/user';
+
+interface CreateFormData {
+  playerName: string;
+  config: RoomConfig;
+}
+
+export default function CreateForm() {
+  const [playerName, setPlayerName] = createSignal(user.name);
+  const [rounds, setRounds] = createSignal<3 | 5 | 7>(5);
+  const [timeScale, setTimeScale] = createSignal<number>(1.0);
+  const [maxPlayers, setMaxPlayers] = createSignal<number>(6);
+  const [witnessCount, setWitnessCount] = createSignal<'auto' | 1 | 2>('auto');
+  const [allowSpectators, setAllowSpectators] = createSignal<boolean>(true);
+  const [voiceEnabled, setVoiceEnabled] = createSignal<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = createSignal(false);
+  const [error, setError] = createSignal('');
+  const [showAdvanced, setShowAdvanced] = createSignal(false);
+
+  const validatePlayerName = (name: string): string | null => {
+    if (name.length < PLAYER_NAME_MIN) return 'Name is required';
+    if (name.length > PLAYER_NAME_MAX) return `Name must be ${PLAYER_NAME_MAX} characters or less`;
+    if (!PLAYER_NAME_REGEX.test(name)) return 'Only letters, numbers, underscores, and hyphens allowed';
+    return null;
+  };
+
+  const handleSubmit = async (e: SubmitEvent) => {
+    e.preventDefault();
+    setError('');
+
+    const nameError = validatePlayerName(playerName());
+    if (nameError) {
+      setError(nameError);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const formData: CreateFormData = {
+      playerName: playerName(),
+      config: {
+        rounds: rounds(),
+        timeScale: timeScale(),
+        maxPlayers: maxPlayers(),
+        witnessCount: witnessCount(),
+        allowSpectators: allowSpectators(),
+        voiceEnabled: voiceEnabled(),
+      },
+    };
+
+    console.log('Create room:', formData);
+
+    setTimeout(() => {
+      setIsSubmitting(false);
+    }, 1000);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} class="flex flex-col gap-6">
+      <div class="flex flex-col gap-2">
+        <label for="create-player-name" class="text-sm font-medium text-text">
+          Your name
+        </label>
+        <input
+          id="create-player-name"
+          type="text"
+          value={playerName()}
+          onInput={(e) => setPlayerName(e.currentTarget.value)}
+          placeholder="What should we call you?"
+          maxLength={PLAYER_NAME_MAX}
+          class={cn(
+            'input-field h-12 w-full rounded-xl px-4',
+            'text-base text-text placeholder:text-muted/50'
+          )}
+        />
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-medium text-text">
+          Rounds
+        </label>
+        <div class="grid grid-cols-3 gap-2">
+          {([3, 5, 7] as const).map((num) => (
+            <button
+              type="button"
+              onClick={() => setRounds(num)}
+              class={cn(
+                'h-12 rounded-xl text-sm font-medium transition-all duration-100',
+                rounds() === num
+                  ? 'bg-surface-elevated text-text ring-1 ring-border'
+                  : 'bg-background text-muted hover:text-text'
+              )}
+            >
+              {num === 3 ? 'Quick · 3' : num === 5 ? 'Standard · 5' : 'Long · 7'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setShowAdvanced(!showAdvanced())}
+        class="flex items-center gap-2 text-sm text-muted hover:text-text transition-colors"
+      >
+        <svg 
+          class={cn(
+            'h-4 w-4 transition-transform duration-200',
+            showAdvanced() && 'rotate-90'
+          )} 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          stroke-width="2"
+        >
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+        More options
+      </button>
+
+      <Show when={showAdvanced()}>
+        <div class="animate-fade-in flex flex-col gap-6">
+          <div class="divider-subtle" />
+
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium text-text">
+              Game speed
+            </label>
+            <div class="grid grid-cols-3 gap-2">
+              {([
+                { value: 0.7, label: 'Relaxed' },
+                { value: 1.0, label: 'Normal' },
+                { value: 1.3, label: 'Fast' },
+              ] as const).map((option) => (
+                <button
+                  type="button"
+                  onClick={() => setTimeScale(option.value)}
+                  class={cn(
+                    'h-12 rounded-xl text-sm font-medium transition-all duration-100',
+                    timeScale() === option.value
+                      ? 'bg-surface-elevated text-text ring-1 ring-border'
+                      : 'bg-background text-muted hover:text-text'
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p class="text-xs text-muted">
+              How much time you get for each phase
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label for="max-players" class="text-sm font-medium text-text">
+              Player limit
+            </label>
+            <div class="grid grid-cols-3 gap-2">
+              {([4, 6, 8] as const).map((num) => (
+                <button
+                  type="button"
+                  onClick={() => setMaxPlayers(num)}
+                  class={cn(
+                    'h-12 rounded-xl text-sm font-medium transition-all duration-100',
+                    maxPlayers() === num
+                      ? 'bg-surface-elevated text-text ring-1 ring-border'
+                      : 'bg-background text-muted hover:text-text'
+                  )}
+                >
+                  Up to {num}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label for="witness-count" class="text-sm font-medium text-text">
+              Witnesses per round
+            </label>
+            <div class="grid grid-cols-3 gap-2">
+              {(['auto', 1, 2] as const).map((val) => (
+                <button
+                  type="button"
+                  onClick={() => setWitnessCount(val)}
+                  class={cn(
+                    'h-12 rounded-xl text-sm font-medium transition-all duration-100',
+                    witnessCount() === val
+                      ? 'bg-surface-elevated text-text ring-1 ring-border'
+                      : 'bg-background text-muted hover:text-text'
+                  )}
+                >
+                  {val === 'auto' ? 'Auto' : val}
+                </button>
+              ))}
+            </div>
+            <p class="text-xs text-muted">
+              Auto picks based on player count
+            </p>
+          </div>
+
+          <div class="divider-subtle" />
+
+          <div class="flex flex-col gap-4">
+            <label class="flex min-h-11 cursor-pointer items-center justify-between">
+              <div class="flex flex-col gap-0.5">
+                <span class="text-sm font-medium text-text">Spectators can watch</span>
+                <span class="text-xs text-muted">Let others join without playing</span>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={allowSpectators()}
+                onClick={() => setAllowSpectators(!allowSpectators())}
+                class={cn(
+                  'relative h-7 w-12 shrink-0 rounded-full transition-colors duration-100',
+                  allowSpectators() ? 'bg-witness' : 'bg-border'
+                )}
+              >
+                <span
+                  class={cn(
+                    'absolute top-1 left-1 h-5 w-5 rounded-full bg-white transition-transform duration-100',
+                    allowSpectators() && 'translate-x-5'
+                  )}
+                />
+              </button>
+            </label>
+
+            <label class="flex min-h-11 cursor-pointer items-center justify-between">
+              <div class="flex flex-col gap-0.5">
+                <span class="text-sm font-medium text-text">Voice chat</span>
+                <span class="text-xs text-muted">Built-in voice for the group</span>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={voiceEnabled()}
+                onClick={() => setVoiceEnabled(!voiceEnabled())}
+                class={cn(
+                  'relative h-7 w-12 shrink-0 rounded-full transition-colors duration-100',
+                  voiceEnabled() ? 'bg-witness' : 'bg-border'
+                )}
+              >
+                <span
+                  class={cn(
+                    'absolute top-1 left-1 h-5 w-5 rounded-full bg-white transition-transform duration-100',
+                    voiceEnabled() && 'translate-x-5'
+                  )}
+                />
+              </button>
+            </label>
+          </div>
+        </div>
+      </Show>
+
+      <Show when={error()}>
+        <p class="animate-fade-in rounded-lg bg-error/10 px-4 py-3 text-sm text-error">{error()}</p>
+      </Show>
+
+      <button
+        type="submit"
+        disabled={isSubmitting()}
+        class={cn(
+          'btn-primary flex h-14 items-center justify-center gap-2 rounded-xl',
+          'text-base font-semibold',
+          'disabled:cursor-not-allowed disabled:opacity-40'
+        )}
+      >
+        <Show when={isSubmitting()}>
+          <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+        </Show>
+        Start Game
+      </button>
+    </form>
+  );
+}
