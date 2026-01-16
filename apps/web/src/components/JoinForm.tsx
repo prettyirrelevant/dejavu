@@ -1,15 +1,13 @@
 import { createSignal, Show } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
 import { PLAYER_NAME_REGEX, PLAYER_NAME_MIN, PLAYER_NAME_MAX, ROOM_CODE_LENGTH } from '@dejavu/shared';
 import { cn } from '../lib/cn';
-import { user } from '../stores/user';
-
-interface JoinFormData {
-  roomCode: string;
-  playerName: string;
-  joinAsSpectator: boolean;
-}
+import { user, setUser } from '../stores/user';
+import { joinRoom } from '../lib/game-client';
+import { setName } from '../lib/storage';
 
 export default function JoinForm() {
+  const navigate = useNavigate();
   const [roomCode, setRoomCode] = createSignal('');
   const [playerName, setPlayerName] = createSignal(user.name);
   const [joinAsSpectator, setJoinAsSpectator] = createSignal(false);
@@ -52,17 +50,17 @@ export default function JoinForm() {
 
     setIsSubmitting(true);
 
-    const formData: JoinFormData = {
-      roomCode: roomCode(),
-      playerName: playerName(),
-      joinAsSpectator: joinAsSpectator(),
-    };
+    try {
+      setName(playerName());
+      setUser({ name: playerName() });
 
-    console.log('Join room:', formData);
+      await joinRoom(roomCode(), playerName(), joinAsSpectator());
 
-    setTimeout(() => {
+      navigate(`/${roomCode()}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to join room');
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (

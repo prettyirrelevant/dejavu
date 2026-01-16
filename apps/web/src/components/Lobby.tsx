@@ -1,6 +1,7 @@
 import { createSignal, For, Show, createMemo } from 'solid-js';
 import { cn } from '../lib/cn';
-import { game, setGame } from '../stores/game';
+import { game } from '../stores/game';
+import { setReady, startGame } from '../lib/game-client';
 
 interface LobbyProps {
   roomCode: string;
@@ -41,12 +42,12 @@ export default function Lobby(props: LobbyProps) {
   const handleToggleReady = () => {
     const player = currentPlayer();
     if (!player) return;
-    setGame('players', (p) => p.id === player.id, 'isReady', !player.isReady);
+    setReady(!player.isReady);
   };
 
   const handleStartGame = () => {
     if (!canStartGame()) return;
-    console.log('Starting game...');
+    startGame();
   };
 
   return (

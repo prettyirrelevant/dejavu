@@ -68,6 +68,10 @@ export class WebSocketClient {
     this.ws = null;
   }
 
+  isConnected(): boolean {
+    return this.ws?.readyState === WebSocket.OPEN;
+  }
+
   private startHeartbeat(): void {
     this.pingInterval = window.setInterval(() => {
       this.send({

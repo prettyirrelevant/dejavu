@@ -1,15 +1,13 @@
 import { createSignal, Show } from 'solid-js';
-import type { RoomConfig } from '@dejavu/shared';
+import { useNavigate } from '@solidjs/router';
 import { PLAYER_NAME_REGEX, PLAYER_NAME_MIN, PLAYER_NAME_MAX } from '@dejavu/shared';
 import { cn } from '../lib/cn';
-import { user } from '../stores/user';
-
-interface CreateFormData {
-  playerName: string;
-  config: RoomConfig;
-}
+import { user, setUser } from '../stores/user';
+import { createAndJoinRoom } from '../lib/game-client';
+import { setName } from '../lib/storage';
 
 export default function CreateForm() {
+  const navigate = useNavigate();
   const [playerName, setPlayerName] = createSignal(user.name);
   const [rounds, setRounds] = createSignal<3 | 5 | 7>(5);
   const [timeScale, setTimeScale] = createSignal<number>(1.0);
@@ -40,23 +38,24 @@ export default function CreateForm() {
 
     setIsSubmitting(true);
 
-    const formData: CreateFormData = {
-      playerName: playerName(),
-      config: {
+    try {
+      setName(playerName());
+      setUser({ name: playerName() });
+
+      const roomCode = await createAndJoinRoom(playerName(), {
         rounds: rounds(),
         timeScale: timeScale(),
         maxPlayers: maxPlayers(),
         witnessCount: witnessCount(),
         allowSpectators: allowSpectators(),
         voiceEnabled: voiceEnabled(),
-      },
-    };
+      });
 
-    console.log('Create room:', formData);
-
-    setTimeout(() => {
+      navigate(`/${roomCode}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create room');
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
