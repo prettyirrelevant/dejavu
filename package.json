@@ -8,6 +8,8 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "lint": "oxlint --deny-warnings",
+    "test": "pnpm --filter @dejavu/server test",
+    "test:ci": "pnpm --filter @dejavu/server test:ci",
     "deploy": "pnpm --filter @dejavu/server deploy"
   },
   "devDependencies": {

@@ -62,7 +62,7 @@ export function selectDetailQuestion(scenario: MemoryScenario, questionIndex: nu
   return questions[questionIndex % questions.length];
 }
 
-function getFallbackScenario(): MemoryScenario {
+export function getFallbackScenario(): MemoryScenario {
   const fallbacks: MemoryScenario[] = [
     {
       prompt: 'A late night at a 24-hour diner. A stranger left something behind at the counter before hurrying out into the rain.',
