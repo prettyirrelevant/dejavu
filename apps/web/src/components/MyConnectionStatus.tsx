@@ -1,17 +1,13 @@
-import { Show, createMemo, createSignal, onCleanup } from 'solid-js';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import { Show, createMemo } from 'solid-js';
 import { connection } from '../stores/connection';
 import { cn } from '../lib/cn';
 
-dayjs.extend(relativeTime);
-
 const STATUS_CONFIG = {
-  idle: { color: 'bg-muted', label: 'Idle' },
-  connecting: { color: 'bg-amber-500 animate-pulse', label: 'Connecting' },
-  connected: { color: 'bg-success', label: 'Connected' },
-  disconnected: { color: 'bg-imposter', label: 'Disconnected' },
-  error: { color: 'bg-imposter', label: 'Error' },
+  idle: { color: 'text-muted', label: 'Idle' },
+  connecting: { color: 'text-amber-500', label: 'Connecting' },
+  connected: { color: 'text-success', label: 'Connected' },
+  disconnected: { color: 'text-imposter', label: 'Disconnected' },
+  error: { color: 'text-imposter', label: 'Error' },
 } as const;
 
 function formatLatency(ms: number): string {
@@ -20,26 +16,31 @@ function formatLatency(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-function formatTimeAgo(timestamp: number): string {
-  if (timestamp === 0) return 'never';
-  return dayjs(timestamp).fromNow();
+function WifiIcon(props: { class?: string; animate?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class={cn('size-4', props.animate && 'animate-pulse', props.class)}
+    >
+      <path d="M12 20h.01" />
+      <path d="M8.5 16.429a5 5 0 0 1 7 0" />
+      <path d="M5 12.859a10 10 0 0 1 14 0" />
+      <path d="M1.5 9.288a15 15 0 0 1 21 0" />
+    </svg>
+  );
 }
 
 export default function MyConnectionStatus() {
-  const [now, setNow] = createSignal(Date.now());
-  const interval = setInterval(() => setNow(Date.now()), 1000);
-  onCleanup(() => clearInterval(interval));
-
   const config = createMemo(() => STATUS_CONFIG[connection.status]);
   const isConnected = createMemo(() => connection.status === 'connected');
   const isDisconnected = createMemo(() => 
     connection.status === 'disconnected' || connection.status === 'error'
   );
-
-  const displayTimeAgo = createMemo(() => {
-    now(); // subscribes to now() for re-computation
-    return formatTimeAgo(connection.lastPong);
-  });
 
   return (
     <div
@@ -50,7 +51,10 @@ export default function MyConnectionStatus() {
           : 'border-border bg-surface'
       )}
     >
-      <span class={cn('size-2 rounded-full', config().color)} />
+      <WifiIcon 
+        class={config().color} 
+        animate={connection.status === 'connecting'} 
+      />
       
       <Show
         when={isConnected()}
@@ -60,13 +64,9 @@ export default function MyConnectionStatus() {
           </span>
         }
       >
-        <div class="flex items-center gap-2">
-          <span class="tabular-nums text-muted">
-            {formatLatency(connection.latency)}
-          </span>
-          <span class="text-border">•</span>
-          <span class="text-muted">{displayTimeAgo()}</span>
-        </div>
+        <span class="tabular-nums text-muted">
+          {formatLatency(connection.latency)}
+        </span>
       </Show>
     </div>
   );

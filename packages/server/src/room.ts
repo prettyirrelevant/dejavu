@@ -532,11 +532,6 @@ export class GameRoom extends DurableObject<Env> {
     const player = this.state.players.get(playerId) || this.state.spectators.get(playerId);
     if (!player) return;
 
-    if (this.state.gameState === 'lobby') {
-      await this.removePlayer(playerId, 'disconnected');
-      return;
-    }
-
     player.connectionStatus = 'dropped';
     await this.persistState();
 
@@ -908,6 +903,7 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private track(event: string, data: Record<string, string | number> = {}): void {
+    if (!this.env.ANALYTICS) return;
     try {
       this.env.ANALYTICS.writeDataPoint({
         blobs: [event, this.state?.roomCode || '', ...Object.values(data).filter((v): v is string => typeof v === 'string')],
@@ -948,7 +944,7 @@ export class GameRoom extends DurableObject<Env> {
 interface Env {
   GAME_ROOM: DurableObjectNamespace<GameRoom>;
   AI: Ai;
-  ANALYTICS: AnalyticsEngineDataset;
+  ANALYTICS?: AnalyticsEngineDataset;
   CALLS_APP_ID: string;
   CALLS_APP_SECRET: string;
 }

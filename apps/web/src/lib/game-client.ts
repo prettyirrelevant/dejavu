@@ -339,9 +339,33 @@ export async function createAndJoinRoom(playerName: string, config: RoomConfig):
 export async function joinRoom(roomCode: string, playerName: string, asSpectator = false): Promise<void> {
   await connectToRoom(roomCode);
   
-  send({
-    type: 'join_room',
-    payload: { roomCode, playerName, asSpectator },
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('Connection timed out'));
+    }, 10000);
+
+    const originalHandler = client?.getMessageHandler();
+    
+    client?.setMessageHandler((message: ServerMessage) => {
+      if (message.type === 'room_joined') {
+        clearTimeout(timeout);
+        client?.setMessageHandler(originalHandler!);
+        handleMessage(message);
+        resolve();
+      } else if (message.type === 'error') {
+        clearTimeout(timeout);
+        client?.setMessageHandler(originalHandler!);
+        handleMessage(message);
+        reject(new Error(message.payload.message));
+      } else {
+        handleMessage(message);
+      }
+    });
+
+    send({
+      type: 'join_room',
+      payload: { roomCode, playerName, asSpectator },
+    });
   });
 }
 

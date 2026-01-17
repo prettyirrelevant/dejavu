@@ -85,6 +85,14 @@ export class WebSocketClient {
     return this.ws?.readyState === WebSocket.OPEN;
   }
 
+  getMessageHandler(): MessageHandler {
+    return this.options.onMessage;
+  }
+
+  setMessageHandler(handler: MessageHandler): void {
+    this.options.onMessage = handler;
+  }
+
   private startHeartbeat(): void {
     this.pingInterval = window.setInterval(() => {
       this.lastPingTime = Date.now();
