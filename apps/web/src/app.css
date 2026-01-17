@@ -87,42 +87,8 @@ body {
   ) 1;
 }
 
-/* Notebook margin effect - classic paper margin lines */
 .notebook-margin {
   position: relative;
-}
-
-.notebook-margin::before,
-.notebook-margin::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 0;
-  pointer-events: none;
-}
-
-/* Primary margin line */
-.notebook-margin::before {
-  left: 1.25rem;
-  border-left: 1.5px dotted var(--color-line);
-  opacity: 0.5;
-}
-
-/* Secondary margin line */
-.notebook-margin::after {
-  left: 1.75rem;
-  border-left: 1px dotted var(--color-line);
-  opacity: 0.3;
-}
-
-@media (min-width: 768px) {
-  .notebook-margin::before {
-    left: 2rem;
-  }
-  .notebook-margin::after {
-    left: 2.625rem;
-  }
 }
 
 /* Sharp card with thin border - notebook aesthetic */
