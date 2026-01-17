@@ -232,11 +232,14 @@ function handleMessage(message: ServerMessage): void {
     }
 
     case 'round_results': {
-      const { totalScores, timeRemaining } = message.payload;
+      const { totalScores, timeRemaining, witnessIds, witnessNames, fragments } = message.payload;
       setGame((prev) => ({
         ...prev,
         phase: 'results',
         timeRemaining,
+        witnessIds: witnessIds || [],
+        witnessNames: witnessNames || [],
+        fragments: fragments || prev.fragments,
         players: prev.players.map((p) => ({
           ...p,
           score: totalScores[p.id] ?? p.score,
@@ -344,7 +347,7 @@ export async function joinRoom(roomCode: string, playerName: string, asSpectator
   
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
-      reject(new Error('Connection timed out'));
+      reject(new Error('Could not join room. The server took too long to respond. Please check the room code and try again.'));
     }, 10000);
 
     const originalHandler = client?.getMessageHandler();

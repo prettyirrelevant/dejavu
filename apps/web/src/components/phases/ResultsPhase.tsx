@@ -31,30 +31,35 @@ export default function ResultsPhase() {
 
         <section class="flex flex-col gap-6">
           <div class="border border-witness/30 bg-witness/5 p-6">
-            <div class="flex flex-col items-center gap-2 text-center">
+            <div class="flex flex-col items-center gap-3 text-center">
               <span class="text-xs font-medium uppercase tracking-[0.2em] text-muted">
-                You were the
+                The {game.witnessNames.length > 1 ? 'Witnesses Were' : 'Witness Was'}
               </span>
-              <span class="text-2xl font-bold text-text">
-                {isWitness() ? 'WITNESS' : 'IMPOSTER'}
-              </span>
-              <Show when={isWitness()}>
-                <p class="text-sm text-muted">
-                  You had the real memories
-                </p>
-              </Show>
-              <Show when={!isWitness()}>
-                <p class="text-sm text-muted">
-                  You were fabricating the whole time
-                </p>
-              </Show>
+              <div class="flex flex-wrap justify-center gap-2">
+                <For each={game.witnessNames}>
+                  {(name) => (
+                    <span class="bg-witness/20 px-3 py-1 text-lg font-bold text-text">
+                      {name}
+                    </span>
+                  )}
+                </For>
+              </div>
+              <div class="mt-2 border-t border-border/50 pt-3">
+                <span class="text-xs text-muted">You were the </span>
+                <span class={cn(
+                  'text-sm font-semibold',
+                  isWitness() ? 'text-witness' : 'text-imposter'
+                )}>
+                  {isWitness() ? 'WITNESS' : 'IMPOSTER'}
+                </span>
+              </div>
             </div>
           </div>
 
-          <Show when={game.fragments.length > 0 && isWitness()}>
+          <Show when={game.fragments.length > 0}>
             <div class="flex flex-col gap-3">
               <span class="px-1 text-xs font-medium uppercase tracking-[0.2em] text-muted">
-                Your Fragments (The Truth)
+                The Truth (Memory Fragments)
               </span>
               <ul class="flex flex-col gap-2">
                 <For each={game.fragments}>

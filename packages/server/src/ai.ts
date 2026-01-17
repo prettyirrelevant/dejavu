@@ -8,21 +8,21 @@ export interface MemoryScenario {
 }
 
 const SCENARIO_CATEGORIES = [
-  'a moment of unexpected connection with a stranger',
-  'something small that changed your entire day',
-  'a goodbye that felt different',
-  'waiting somewhere and noticing something odd',
-  'a celebration that took an unexpected turn',
-  'finding something that clearly belonged to someone else',
-  'witnessing a private moment in public',
-  'a familiar place that suddenly felt strange',
-  'someone who reminded you of someone else',
-  'the last time you saw a place before it changed',
-  'overhearing something you probably shouldn\'t have',
-  'a meal that became unexpectedly significant',
-  'getting lost and finding something better',
-  'the moment just before something changed forever',
-  'a favor asked by someone you barely knew',
+  'an awkward moment at a grocery store',
+  'a party where something weird happened',
+  'a strange encounter on public transport',
+  'a customer service disaster',
+  'a package delivery gone wrong',
+  'a chaotic family dinner',
+  'something bizarre at the gym',
+  'a first date that took a turn',
+  'a suspicious neighbor encounter',
+  'fast food weirdness',
+  'a waiting room incident',
+  'an elevator situation',
+  'a coworker doing something unexplainable',
+  'a pet causing chaos',
+  'a wedding that went off script',
 ];
 
 export async function generateMemoryScenario(geminiApiKey: string | undefined): Promise<MemoryScenario> {
@@ -32,46 +32,39 @@ export async function generateMemoryScenario(geminiApiKey: string | undefined): 
 
   const category = SCENARIO_CATEGORIES[Math.floor(Math.random() * SCENARIO_CATEGORIES.length)];
 
-  const prompt = `You are creating content for a social deduction game called "DÉJÀ VU" where one player (the witness) receives a detailed memory, while other players (imposters) only get vague hints and must fake having the same memory.
+  const prompt = `You're making scenarios for a party game. One player gets the real details, others have to fake it.
 
-Generate a scenario about: ${category}
+Theme: ${category}
 
-WHAT MAKES A GOOD MEMORY:
-- It should feel like something that actually happened to someone, not a movie scene
-- The kind of moment you'd randomly remember while doing dishes five years later
-- Mundane setting, but something small made it stick: a detail, a phrase, a feeling
-- Specific enough to be vivid, universal enough that anyone could claim it
+Make it FUNNY and SIMPLE. Think "stories you'd tell friends at a bar" not "creative writing class."
 
-YOUR RESPONSE (JSON only, no other text):
+JSON only:
 {
-  "prompt": "2-3 sentences in second person ('You were...'). Set the scene with atmosphere, then introduce the moment that made it memorable. Don't reveal the specific details, just the emotional shape of the memory.",
+  "prompt": "2 sentences max. Set up a normal situation, then ONE weird/funny twist. Write like you're texting a friend. Example: 'You were at Target when a guy in a bathrobe walked past pushing a cart full of rubber ducks. He made eye contact and nodded like you were in on it.'",
 
   "fragments": [
-    "4 hyper-specific sensory details that only someone 'there' would know",
-    "include: exact words spoken, precise colors or numbers, textures, sounds",
-    "these should feel like the random vivid details real memories have",
-    "one should be slightly odd or unexpected"
+    "4 specific funny details the witness knows",
+    "exact quotes, specific numbers, colors, brand names",
+    "make one detail absurd but believable",
+    "these are what imposters CAN'T guess"
   ],
 
   "hints": [
-    "4 vague contextual clues for imposters to build lies around",
-    "emotional tone and general setting only",
-    "broad enough to fabricate details, narrow enough to stay consistent",
-    "should NOT overlap with fragments (imposters shouldn't guess the specifics)"
+    "4 vague clues for imposters to BS around",
+    "general vibe only - no specifics",
+    "like: 'something unexpected happened' or 'someone said something weird'",
+    "imposters should be able to make up plausible lies"
   ],
 
   "detailQuestions": [
-    "5 questions that separate witnesses from imposters",
-    "probe sensory specifics: colors, numbers, exact words, textures",
-    "a real witness answers instantly; an imposter hesitates or invents",
-    "avoid yes/no questions, ask for specifics they'd have to recall"
+    "5 simple questions about specifics",
+    "what color, what number, what exactly did they say",
+    "stuff a real witness remembers instantly",
+    "stuff an imposter has to make up"
   ]
 }
 
-QUALITY CHECK before responding:
-- Could someone guess any fragment from the hints alone? If yes, make hints vaguer.
-- Are the fragments specific enough that two people couldn't invent the same answer?
-- Do the questions target the fragments without obviously telegraphing them?`;
+Keep it fun. No sad stories. Weird > deep.`;
 
   try {
     const ai = new GoogleGenAI({ apiKey: geminiApiKey });
@@ -109,179 +102,179 @@ export function selectDetailQuestion(scenario: MemoryScenario, questionIndex: nu
 export function getFallbackScenario(): MemoryScenario {
   const fallbacks: MemoryScenario[] = [
     {
-      prompt: "You were sitting alone at a coffee shop when someone at the next table got a phone call. You couldn't help but overhear. By the time they hung up, something about your day had shifted, though you couldn't say exactly why.",
+      prompt: "You were at the grocery store when a guy in a full Spider-Man costume walked past you pushing a cart. He stopped, pointed at your cart, and gave you a thumbs up like he approved of your choices.",
       fragments: [
-        'They answered with "I knew you\'d call today" in a voice that sounded relieved',
-        'Their ceramic mug had a chip on the rim and a faded logo of a cartoon bee',
-        'The call lasted exactly four minutes because you watched the clock',
-        'When they hung up, they whispered "finally" to no one',
+        'He had exactly 7 frozen pizzas in his cart',
+        'The costume was missing one glove, his right hand was bare',
+        'He said "solid picks" in a totally normal voice',
+        'He was wearing Crocs under the costume, bright orange ones',
       ],
       hints: [
-        'You overheard one side of a personal phone call',
-        'Something about the person seemed worn down or waiting',
-        'The conversation sounded like it mattered to them',
-        'You noticed details because you had nothing else to look at',
+        'Someone in unusual clothing appeared',
+        'They interacted with you briefly',
+        'It was at a store',
+        'Something about it was just absurd',
       ],
       detailQuestions: [
-        'What were the first words they said when they answered?',
-        'How long did the call last?',
-        'What was on their mug?',
-        'What did they do or say after hanging up?',
-        'How would you describe their tone when they first picked up?',
+        'How many pizzas were in his cart?',
+        'What was wrong with the costume?',
+        'What exactly did he say to you?',
+        'What shoes was he wearing?',
+        'Which hand was exposed?',
       ],
     },
     {
-      prompt: "You were helping a friend move out of their apartment. While packing the last box in the bedroom, you found something wedged behind the radiator that clearly wasn't theirs. Your friend had no idea how long it had been there.",
+      prompt: "You were at a coffee shop when the barista called out a name and nobody claimed the drink for like 2 minutes. Finally an old lady stood up and said 'that's me, I'm Darkwolf.'",
       fragments: [
-        'It was a polaroid of three people at a beach, their faces sun-bleached and hard to make out',
-        'On the back, in smudged blue ink: "last one before everything"',
-        'The photo was dated August 2019 in the white border',
-        'One person was mid-laugh, holding a striped beach umbrella like a sword',
+        'The drink was a venti caramel frappuccino with extra whip',
+        'She was wearing a sweater with cats playing poker on it',
+        'She winked at you when she grabbed it',
+        'Her actual purse had a Metallica patch on it',
       ],
       hints: [
-        'You found something personal that belonged to a stranger',
-        'It was a memento from a happy moment',
-        'There was writing that felt private',
-        'It made you wonder about the people who lived there before',
+        'Someone had an unexpected name',
+        'It happened at a cafe',
+        'An older person surprised you',
+        'There was a funny moment',
       ],
       detailQuestions: [
-        'What exactly did you find?',
-        'What was written on it, word for word?',
-        'What year or date was on it?',
-        'How many people were in it?',
-        'What was someone doing that caught your eye?',
+        'What was the drink order?',
+        'What was on her sweater?',
+        'What did she do when she grabbed the drink?',
+        'What was on her purse or bag?',
+        'What name was called out?',
       ],
     },
     {
-      prompt: "You were at a wedding reception when the best man's speech veered somewhere no one expected. The room got very quiet. You watched the groom's face and couldn't look away.",
+      prompt: "You were in an elevator when a guy got on carrying a life-size cardboard cutout of Danny DeVito. He positioned it to face the doors and stood next to it like everything was normal.",
       fragments: [
-        'The best man paused mid-sentence and said "I promised myself I wouldn\'t do this"',
-        'The groom was wearing suspenders with small embroidered anchors',
-        'Someone at table six knocked over a water glass and no one moved to clean it',
-        'The bride put her hand on the groom\'s knee, not his hand',
+        'The cutout was from the movie Twins',
+        'He pressed the button for floor 11',
+        'He said "Danny doesn\'t like small talk" when you made eye contact',
+        'He was wearing a lanyard that said INTERN in big letters',
       ],
       hints: [
-        'A speech at a celebration went off-script',
-        'There was a long uncomfortable silence',
-        'You watched how the couple reacted to each other',
-        'Small accidents happened that people ignored',
+        'Someone brought something weird into a small space',
+        'They acted like it was totally normal',
+        'You were stuck with them briefly',
+        'They said something memorable',
       ],
       detailQuestions: [
-        'What exactly did the best man say when the speech shifted?',
-        'What did you notice about what the groom was wearing?',
-        'What happened that broke the silence?',
-        'How did the bride respond physically?',
-        'Which table had the small accident?',
+        'What movie was the cutout from?',
+        'What floor did he press?',
+        'What did he say to you?',
+        'What did his lanyard say?',
+        'Who was the cutout of?',
       ],
     },
     {
-      prompt: "You were stuck in an elevator for almost twenty minutes with one other person. Neither of you spoke the whole time. Then, right before the doors finally opened, they turned to you and said something you still think about.",
+      prompt: "You were at a fast food drive-thru at 2am when the person working the window handed you your food and said 'the raccoons are getting bold' with zero context. Then just closed the window.",
       fragments: [
-        'They were carrying a canvas tote bag with a sad-looking cartoon lemon on it',
-        'The elevator stuttered to a stop between floors 7 and 8, you could see both buttons half-lit',
-        'Right before the doors opened they said "Some people are just waiting to be found"',
-        'They were wearing one brown sock and one that was almost brown but slightly green',
+        'You ordered a 10-piece nugget meal with a Sprite',
+        'There was definitely a raccoon sitting on the dumpster behind them',
+        'They were wearing a name tag that said "Manager Kyle"',
+        'The total was exactly $9.47',
       ],
       hints: [
-        'You were briefly trapped somewhere with a stranger',
-        'There was a long stretch of awkward silence',
-        'They said something strange or memorable at the end',
-        'You had time to notice small details about them',
+        'Something weird happened at a restaurant',
+        'An employee said something strange',
+        'It was late at night',
+        'Animals might have been involved',
       ],
       detailQuestions: [
-        'What were they carrying?',
-        'Where exactly did the elevator stop?',
-        'What did they say to you before leaving?',
-        'What did you notice about their socks or shoes?',
-        'How long were you stuck, roughly?',
+        'What did you order?',
+        'What animal did you see?',
+        'What was the employee\'s name?',
+        'What was the total?',
+        'What drink did you get?',
       ],
     },
     {
-      prompt: "You were at a laundromat late at night when someone's dryer finished. The clothes just sat there, tumbling on residual heat, and no one ever came back. You waited longer than you should have.",
+      prompt: "You were at the gym when a guy on the treadmill next to you answered his phone, said 'the eagle has landed' completely seriously, then hung up and kept running like nothing happened.",
       fragments: [
-        'Dryer number 12, the one closest to the vending machine',
-        'Mostly kids\' clothes with dinosaur prints, and one oversized grey cardigan',
-        'A post-it note fell out that said "call her back" in red pen',
-        'You gave up and left at 11:47 PM, you remember checking your phone',
+        'He was running at exactly 6.5 mph, you checked',
+        'He was wearing a shirt that said "ASK ME ABOUT MY PODCAST"',
+        'The call lasted maybe 4 seconds total',
+        'He had airpods but answered on speakerphone anyway',
       ],
       hints: [
-        'Someone left behind something and never returned',
-        'You felt strangely responsible for a stranger\'s things',
-        'It was late and the place was mostly empty',
-        'The abandoned items hinted at someone\'s life',
+        'Someone took a weird phone call',
+        'It happened during exercise',
+        'The call was very short',
+        'They seemed to think it was normal',
       ],
       detailQuestions: [
-        'Which dryer number was it?',
-        'What kinds of clothes were inside?',
-        'What did the note say?',
-        'What time did you finally leave?',
-        'Where in the laundromat was the dryer located?',
+        'What speed was he running?',
+        'What did his shirt say?',
+        'How long was the call?',
+        'What exactly did he say?',
+        'How did he answer the phone?',
       ],
     },
     {
-      prompt: "You were on a delayed flight, stuck on the tarmac for over an hour. The person next to you fell asleep and their book slipped into your lap. You read a few pages before you could stop yourself.",
+      prompt: "You were waiting for the bus when a woman sat down next to you, opened a tupperware container full of shrimp, and started eating them one by one while maintaining direct eye contact.",
       fragments: [
-        'It was a water-damaged paperback of "The Remains of the Day" with a cracked spine',
-        'Someone had underlined the phrase "dignity in service" in faint pencil',
-        'A boarding pass from a previous flight was tucked in as a bookmark (gate B7)',
-        'They woke up when the captain announced 45 more minutes and apologized three times',
+        'There were exactly 12 shrimp, you counted',
+        'She was wearing scrubs with little tacos printed on them',
+        'She offered you one and said "they\'re from yesterday but they\'re fine"',
+        'The bus was the 42, it said so on the sign',
       ],
       hints: [
-        'You were stuck waiting and had nothing to do',
-        'You accidentally saw something personal belonging to a stranger',
-        'It was a book or document of some kind',
-        'The moment ended a bit awkwardly',
+        'Someone ate something unusual in public',
+        'They tried to interact with you',
+        'You were waiting somewhere',
+        'It was uncomfortable but funny',
       ],
       detailQuestions: [
-        'What book was it?',
-        'What phrase or passage had been marked?',
-        'What was being used as a bookmark?',
-        'How did the situation end?',
-        'What condition was the book in?',
+        'How many shrimp were there?',
+        'What was she wearing?',
+        'What did she say when she offered you some?',
+        'What bus were you waiting for?',
+        'What pattern was on her scrubs?',
       ],
     },
     {
-      prompt: "You were sitting in a hospital waiting room for hours. Across from you, a man got a phone call, listened for about ten seconds, and then started crying silently. No one else seemed to notice.",
+      prompt: "You were at a wedding when the DJ accidentally played the wrong song for the first dance. Instead of stopping, the couple just committed to it and slow danced to 'Who Let The Dogs Out.'",
       fragments: [
-        'He was wearing a faded denim jacket with a small enamel pin of a rainbow',
-        'He said "okay" four times in a row, each one quieter than the last',
-        'The clock on the wall was stuck at 3:42 and had been the whole time you were there',
-        'After hanging up he stared at the vending machine for a full minute without moving',
+        'They danced for the entire 3 minutes and 18 seconds',
+        'The groom dipped the bride during the bark part',
+        'The DJ\'s booth had a banner that said "DJ Smooth Moves"',
+        'Grandma was the first one to start clapping along',
       ],
       hints: [
-        'You witnessed someone receive difficult news',
-        'You were in a place where people wait anxiously',
-        'You noticed because everyone else was distracted',
-        'Small details stood out in the stillness',
+        'Music went wrong at an event',
+        'People handled it unexpectedly well',
+        'It was at a celebration',
+        'Someone\'s reaction made it better',
       ],
       detailQuestions: [
-        'What was he wearing that you remember?',
-        'What did he say on the phone?',
-        'What time was the clock stuck on?',
-        'What did he do immediately after hanging up?',
-        'What stood out about his jacket?',
+        'How long did the dance last?',
+        'What did the groom do during the song?',
+        'What was the DJ\'s name or sign?',
+        'Who started clapping first?',
+        'What song actually played?',
       ],
     },
     {
-      prompt: "You ducked into a used bookstore to get out of the rain. While you waited, you overheard the owner talking to what seemed like a very old friend. They didn't know you were listening.",
+      prompt: "You were at a work meeting when someone's kid walked into the Zoom frame, held up a drawing, and announced 'this is daddy's boss, he is a snake' then left.",
       fragments: [
-        'The owner said "I still have the letter, I just can\'t read it again"',
-        'Rain drummed on a skylight you hadn\'t noticed until then',
-        'The friend was holding a book called "Birds of the Pacific Northwest" but never bought it',
-        'A cat was asleep on a stack of water-stained atlases near the philosophy section',
+        'The drawing was in green crayon, very clearly a snake in a tie',
+        'The kid looked about 5 years old',
+        'The boss laughed and said "accurate"',
+        'Chad from accounting unmuted just to say "incredible"',
       ],
       hints: [
-        'You took shelter somewhere and ended up staying longer than planned',
-        'You overheard a conversation that felt private',
-        'The place had a certain dusty, quiet atmosphere',
-        'There were small details that made it feel lived-in',
+        'A video call got interrupted',
+        'A child said something honest',
+        'It was during work',
+        'People\'s reactions were funny',
       ],
       detailQuestions: [
-        'What did the owner say that stood out to you?',
-        'What sound do you remember from outside?',
-        'What book was the friend holding?',
-        'Was there an animal? What was it doing?',
-        'What section of the store were you near?',
+        'What color was the drawing?',
+        'About how old was the kid?',
+        'What did the boss say?',
+        'Who commented on it?',
+        'What was the drawing of?',
       ],
     },
   ];

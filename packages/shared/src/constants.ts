@@ -13,11 +13,11 @@ export const QUESTION_MAX_LENGTH = 200;
 export const ANSWER_MAX_LENGTH = 200;
 
 export const PHASE_DURATIONS = {
-  memory: 15000,
-  roles: 10000,
+  memory: 20000,
+  roles: 25000,
   details: 60000,
   questions: 60000,
-  voting: 30000,
+  voting: 20000,
   results: 15000,
 } as const;
 

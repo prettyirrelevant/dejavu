@@ -131,7 +131,7 @@ export default function VotingPhase() {
               <ul class="flex flex-col gap-2">
                 <For each={otherPlayers()}>
                   {(player) => {
-                    const isSelected = selectedPlayer() === player.id;
+                    const isSelected = () => selectedPlayer() === player.id;
                     return (
                       <li>
                         <button
@@ -139,24 +139,38 @@ export default function VotingPhase() {
                           onClick={() => setSelectedPlayer(player.id)}
                           disabled={player.connectionStatus === 'dropped'}
                           class={cn(
-                            'flex w-full items-center justify-between border px-4 py-3 text-left transition-colors',
-                            isSelected
-                              ? 'border-witness bg-witness/5'
+                            'flex w-full items-center justify-between border-2 px-4 py-4 text-left transition-all',
+                            isSelected()
+                              ? 'border-witness bg-witness/10 ring-2 ring-witness/30'
                               : 'border-border bg-surface hover:border-muted',
                             player.connectionStatus === 'dropped' && 'cursor-not-allowed opacity-50'
                           )}
                         >
-                          <div class="flex items-center gap-2">
-                            <span class="font-medium text-text">{player.name}</span>
+                          <div class="flex items-center gap-3">
+                            <div class={cn(
+                              'flex size-6 items-center justify-center rounded-full border-2 transition-colors',
+                              isSelected()
+                                ? 'border-witness bg-witness'
+                                : 'border-muted bg-transparent'
+                            )}>
+                              <Show when={isSelected()}>
+                                <svg class="size-3 text-background" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              </Show>
+                            </div>
+                            <span class={cn(
+                              'font-medium',
+                              isSelected() ? 'text-witness' : 'text-text'
+                            )}>{player.name}</span>
                             <Show when={player.connectionStatus !== 'connected'}>
                               <ConnectionIndicator status={player.connectionStatus} />
                             </Show>
                           </div>
-                          <Show when={isSelected}>
-                            <div class="size-4 border-2 border-witness bg-witness" />
-                          </Show>
-                          <Show when={!isSelected}>
-                            <div class="size-4 border border-border" />
+                          <Show when={isSelected()}>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-witness">
+                              Selected
+                            </span>
                           </Show>
                         </button>
                       </li>
