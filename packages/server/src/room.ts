@@ -524,6 +524,14 @@ export class GameRoom extends DurableObject<Env> {
     };
 
     this.send(ws, response);
+
+    this.broadcastExcept(player.id, {
+      type: 'player_connection_changed',
+      payload: {
+        playerId: player.id,
+        status: 'connected',
+      },
+    });
   }
 
   private async handlePlayerDisconnect(playerId: string): Promise<void> {
