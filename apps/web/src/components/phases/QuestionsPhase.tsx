@@ -1,6 +1,7 @@
 import { For, Show, createMemo } from 'solid-js';
 import Timer from '../Timer';
 import ConnectionIndicator from '../ConnectionIndicator';
+import VoiceChat from '../VoiceChat';
 import { cn } from '../../lib/cn';
 import { game } from '../../stores/game';
 
@@ -108,6 +109,8 @@ export default function QuestionsPhase() {
           </p>
         </footer>
       </div>
+
+      <VoiceChat roomCode={game.roomCode || ''} />
     </main>
   );
 }

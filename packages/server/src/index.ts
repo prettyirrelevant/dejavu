@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { ROOM_CODE_CHARS, ROOM_CODE_LENGTH } from '@dejavu/shared';
+import { routePartyTracksRequest } from 'partytracks/server';
 import type { GameRoom } from './room';
 
 export interface Env {
   GAME_ROOM: DurableObjectNamespace<GameRoom>;
-  AI: Ai;
   ANALYTICS: AnalyticsEngineDataset;
+  GEMINI_API_KEY: string;
   CALLS_APP_ID: string;
   CALLS_APP_SECRET: string;
 }
@@ -53,6 +54,19 @@ app.get('/rooms/:code', async (c) => {
   const stub = c.env.GAME_ROOM.get(id);
 
   return stub.fetch(c.req.raw);
+});
+
+app.all('/partytracks/*', async (c) => {
+  if (!c.env.CALLS_APP_ID || !c.env.CALLS_APP_SECRET) {
+    return c.json({ error: 'Voice chat not configured' }, 503);
+  }
+
+  return routePartyTracksRequest({
+    appId: c.env.CALLS_APP_ID,
+    token: c.env.CALLS_APP_SECRET,
+    request: c.req.raw,
+    prefix: '/partytracks',
+  });
 });
 
 export default app;

@@ -13,7 +13,8 @@
   "dependencies": {
     "@dejavu/shared": "workspace:*",
     "@google/genai": "^1.37.0",
-    "hono": "^4.7.0"
+    "hono": "^4.7.0",
+    "partytracks": "^0.0.55"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.8.0",
