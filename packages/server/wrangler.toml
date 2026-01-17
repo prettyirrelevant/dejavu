@@ -18,4 +18,3 @@ dataset = "dejavu_analytics"
 
 [vars]
 CALLS_APP_ID = ""
-SENTRY_DSN = ""

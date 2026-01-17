@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@dejavu/shared": "workspace:*",
-    "@sentry/cloudflare": "^10.34.0",
     "hono": "^4.7.0"
   },
   "devDependencies": {

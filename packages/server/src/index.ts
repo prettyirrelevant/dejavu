@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import * as Sentry from '@sentry/cloudflare';
 import { ROOM_CODE_CHARS, ROOM_CODE_LENGTH } from '@dejavu/shared';
 import type { GameRoom } from './room';
 
@@ -10,7 +9,6 @@ export interface Env {
   ANALYTICS: AnalyticsEngineDataset;
   CALLS_APP_ID: string;
   CALLS_APP_SECRET: string;
-  SENTRY_DSN: string;
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -57,11 +55,5 @@ app.get('/rooms/:code', async (c) => {
   return stub.fetch(c.req.raw);
 });
 
-export default Sentry.withSentry(
-  (env: Env) => ({
-    dsn: env.SENTRY_DSN,
-    tracesSampleRate: 0.1,
-  }),
-  app
-);
+export default app;
 export { GameRoom } from './room';

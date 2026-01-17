@@ -951,5 +951,4 @@ interface Env {
   ANALYTICS: AnalyticsEngineDataset;
   CALLS_APP_ID: string;
   CALLS_APP_SECRET: string;
-  SENTRY_DSN: string;
 }
