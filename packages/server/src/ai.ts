@@ -8,12 +8,21 @@ export interface MemoryScenario {
 }
 
 const SCENARIO_CATEGORIES = [
-  'crime witness',
-  'accident scene',
-  'mysterious encounter',
-  'public incident',
-  'strange occurrence',
-  'memorable event',
+  'a moment of unexpected connection with a stranger',
+  'something small that changed your entire day',
+  'a goodbye that felt different',
+  'waiting somewhere and noticing something odd',
+  'a celebration that took an unexpected turn',
+  'finding something that clearly belonged to someone else',
+  'witnessing a private moment in public',
+  'a familiar place that suddenly felt strange',
+  'someone who reminded you of someone else',
+  'the last time you saw a place before it changed',
+  'overhearing something you probably shouldn\'t have',
+  'a meal that became unexpectedly significant',
+  'getting lost and finding something better',
+  'the moment just before something changed forever',
+  'a favor asked by someone you barely knew',
 ];
 
 export async function generateMemoryScenario(geminiApiKey: string | undefined): Promise<MemoryScenario> {
@@ -23,17 +32,46 @@ export async function generateMemoryScenario(geminiApiKey: string | undefined): 
 
   const category = SCENARIO_CATEGORIES[Math.floor(Math.random() * SCENARIO_CATEGORIES.length)];
 
-  const prompt = `You are creating content for a social deduction game called "DÉJÀ VU" where one player is a witness with real memories and others must fake having the same memory.
+  const prompt = `You are creating content for a social deduction game called "DÉJÀ VU" where one player (the witness) receives a detailed memory, while other players (imposters) only get vague hints and must fake having the same memory.
 
-Generate a ${category} scenario. Respond in this exact JSON format only, no other text:
+Generate a scenario about: ${category}
+
+WHAT MAKES A GOOD MEMORY:
+- It should feel like something that actually happened to someone, not a movie scene
+- The kind of moment you'd randomly remember while doing dishes five years later
+- Mundane setting, but something small made it stick: a detail, a phrase, a feeling
+- Specific enough to be vivid, universal enough that anyone could claim it
+
+YOUR RESPONSE (JSON only, no other text):
 {
-  "prompt": "A 2-3 sentence vivid memory scenario that all players will see. Make it specific but not too detailed.",
-  "fragments": ["4 specific sensory details the witness remembers", "like colors, sounds, smells, exact words heard", "specific times or numbers", "distinctive features of people or objects"],
-  "hints": ["4 vague hints for imposters to fabricate from", "general themes without specifics", "emotional tones", "broad context clues"],
-  "detailQuestions": ["5 probing questions about the scenario", "ask about specific details", "times, colors, sounds, people", "things a real witness would know", "but an imposter would struggle with"]
+  "prompt": "2-3 sentences in second person ('You were...'). Set the scene with atmosphere, then introduce the moment that made it memorable. Don't reveal the specific details, just the emotional shape of the memory.",
+
+  "fragments": [
+    "4 hyper-specific sensory details that only someone 'there' would know",
+    "include: exact words spoken, precise colors or numbers, textures, sounds",
+    "these should feel like the random vivid details real memories have",
+    "one should be slightly odd or unexpected"
+  ],
+
+  "hints": [
+    "4 vague contextual clues for imposters to build lies around",
+    "emotional tone and general setting only",
+    "broad enough to fabricate details, narrow enough to stay consistent",
+    "should NOT overlap with fragments (imposters shouldn't guess the specifics)"
+  ],
+
+  "detailQuestions": [
+    "5 questions that separate witnesses from imposters",
+    "probe sensory specifics: colors, numbers, exact words, textures",
+    "a real witness answers instantly; an imposter hesitates or invents",
+    "avoid yes/no questions, ask for specifics they'd have to recall"
+  ]
 }
 
-Make the scenario intriguing and the fragments very specific (exact colors, times, numbers, words). Hints should be vague enough that imposters can make up plausible answers.`;
+QUALITY CHECK before responding:
+- Could someone guess any fragment from the hints alone? If yes, make hints vaguer.
+- Are the fragments specific enough that two people couldn't invent the same answer?
+- Do the questions target the fragments without obviously telegraphing them?`;
 
   try {
     const ai = new GoogleGenAI({ apiKey: geminiApiKey });
@@ -71,113 +109,179 @@ export function selectDetailQuestion(scenario: MemoryScenario, questionIndex: nu
 export function getFallbackScenario(): MemoryScenario {
   const fallbacks: MemoryScenario[] = [
     {
-      prompt: 'A late night at a 24-hour diner. A stranger left something behind at the counter before hurrying out into the rain.',
+      prompt: "You were sitting alone at a coffee shop when someone at the next table got a phone call. You couldn't help but overhear. By the time they hung up, something about your day had shifted, though you couldn't say exactly why.",
       fragments: [
-        'The clock showed exactly 2:47 AM',
-        'The stranger wore a bright yellow raincoat',
-        'They left behind a worn leather journal with a red ribbon bookmark',
-        'The jukebox was playing "Blue Moon" by Elvis',
+        'They answered with "I knew you\'d call today" in a voice that sounded relieved',
+        'Their ceramic mug had a chip on the rim and a faded logo of a cartoon bee',
+        'The call lasted exactly four minutes because you watched the clock',
+        'When they hung up, they whispered "finally" to no one',
       ],
       hints: [
-        'It was very late at night',
-        'The weather was bad outside',
-        'Someone forgot something',
-        'There was music playing',
+        'You overheard one side of a personal phone call',
+        'Something about the person seemed worn down or waiting',
+        'The conversation sounded like it mattered to them',
+        'You noticed details because you had nothing else to look at',
       ],
       detailQuestions: [
-        'What time was it?',
-        'What was the stranger wearing?',
-        'What did they leave behind?',
-        'What song was playing?',
-        'What color was the item left behind?',
+        'What were the first words they said when they answered?',
+        'How long did the call last?',
+        'What was on their mug?',
+        'What did they do or say after hanging up?',
+        'How would you describe their tone when they first picked up?',
       ],
     },
     {
-      prompt: 'A crowded subway platform during rush hour. Someone dropped their bag and dozens of photographs scattered across the floor.',
+      prompt: "You were helping a friend move out of their apartment. While packing the last box in the bedroom, you found something wedged behind the radiator that clearly wasn't theirs. Your friend had no idea how long it had been there.",
       fragments: [
-        'It happened at the 14th Street station',
-        'The bag was a green canvas messenger bag',
-        'Most photos were black and white portraits',
-        'A child in a red cap helped pick them up',
+        'It was a polaroid of three people at a beach, their faces sun-bleached and hard to make out',
+        'On the back, in smudged blue ink: "last one before everything"',
+        'The photo was dated August 2019 in the white border',
+        'One person was mid-laugh, holding a striped beach umbrella like a sword',
       ],
       hints: [
-        'It was a busy transit location',
-        'Something spilled everywhere',
-        'Strangers helped out',
-        'There were images involved',
+        'You found something personal that belonged to a stranger',
+        'It was a memento from a happy moment',
+        'There was writing that felt private',
+        'It made you wonder about the people who lived there before',
       ],
       detailQuestions: [
-        'Where did this happen?',
-        'What kind of bag was it?',
-        'What was in the photographs?',
-        'Who helped clean up?',
-        'What color was the bag?',
+        'What exactly did you find?',
+        'What was written on it, word for word?',
+        'What year or date was on it?',
+        'How many people were in it?',
+        'What was someone doing that caught your eye?',
       ],
     },
     {
-      prompt: 'A quiet morning at the park. A street performer suddenly stopped mid-song and stared at someone in the crowd.',
+      prompt: "You were at a wedding reception when the best man's speech veered somewhere no one expected. The room got very quiet. You watched the groom's face and couldn't look away.",
       fragments: [
-        'The performer was playing a silver saxophone',
-        'They stopped during "Autumn Leaves"',
-        'They stared at a woman in a blue sundress',
-        'It was around 10:30 in the morning',
+        'The best man paused mid-sentence and said "I promised myself I wouldn\'t do this"',
+        'The groom was wearing suspenders with small embroidered anchors',
+        'Someone at table six knocked over a water glass and no one moved to clean it',
+        'The bride put her hand on the groom\'s knee, not his hand',
       ],
       hints: [
-        'There was live music',
-        'Something unexpected happened',
-        'The performer reacted to someone',
-        'It was during the day',
+        'A speech at a celebration went off-script',
+        'There was a long uncomfortable silence',
+        'You watched how the couple reacted to each other',
+        'Small accidents happened that people ignored',
       ],
       detailQuestions: [
-        'What instrument were they playing?',
-        'What song were they performing?',
-        'Who did they look at?',
-        'What time of day was it?',
-        'What color was the instrument?',
+        'What exactly did the best man say when the speech shifted?',
+        'What did you notice about what the groom was wearing?',
+        'What happened that broke the silence?',
+        'How did the bride respond physically?',
+        'Which table had the small accident?',
       ],
     },
     {
-      prompt: 'A hotel lobby at midnight. The power went out for exactly thirty seconds, and when the lights came back, something had changed.',
+      prompt: "You were stuck in an elevator for almost twenty minutes with one other person. Neither of you spoke the whole time. Then, right before the doors finally opened, they turned to you and said something you still think about.",
       fragments: [
-        'The grandfather clock in the corner had stopped at 12:03',
-        'A painting of a ship was now hanging upside down',
-        'The receptionist was a young man with round glasses',
-        'There were exactly 7 people in the lobby',
+        'They were carrying a canvas tote bag with a sad-looking cartoon lemon on it',
+        'The elevator stuttered to a stop between floors 7 and 8, you could see both buttons half-lit',
+        'Right before the doors opened they said "Some people are just waiting to be found"',
+        'They were wearing one brown sock and one that was almost brown but slightly green',
       ],
       hints: [
-        'It was late at night',
-        'There was a brief darkness',
-        'Something was different after',
-        'There were witnesses around',
+        'You were briefly trapped somewhere with a stranger',
+        'There was a long stretch of awkward silence',
+        'They said something strange or memorable at the end',
+        'You had time to notice small details about them',
       ],
       detailQuestions: [
-        'What time did the clock show?',
-        'What changed after the blackout?',
-        'What did the hotel staff look like?',
-        'How many people were there?',
-        'What was in the painting?',
+        'What were they carrying?',
+        'Where exactly did the elevator stop?',
+        'What did they say to you before leaving?',
+        'What did you notice about their socks or shoes?',
+        'How long were you stuck, roughly?',
       ],
     },
     {
-      prompt: 'A bookstore closing sale. An elderly man bought the very last book and whispered something to the cashier before leaving.',
+      prompt: "You were at a laundromat late at night when someone's dryer finished. The clothes just sat there, tumbling on residual heat, and no one ever came back. You waited longer than you should have.",
       fragments: [
-        'The book was "The Great Gatsby" with a torn cover',
-        'He paid with exact change - $4.75',
-        'He whispered "She would have loved this"',
-        'He wore a faded military pin on his lapel',
+        'Dryer number 12, the one closest to the vending machine',
+        'Mostly kids\' clothes with dinosaur prints, and one oversized grey cardigan',
+        'A post-it note fell out that said "call her back" in red pen',
+        'You gave up and left at 11:47 PM, you remember checking your phone',
       ],
       hints: [
-        'A store was closing down',
-        'An older customer made a purchase',
-        'There was something sentimental',
-        'He said something quiet',
+        'Someone left behind something and never returned',
+        'You felt strangely responsible for a stranger\'s things',
+        'It was late and the place was mostly empty',
+        'The abandoned items hinted at someone\'s life',
       ],
       detailQuestions: [
-        'What book did he buy?',
-        'How much did it cost?',
-        'What did he say to the cashier?',
-        'What was distinctive about his appearance?',
-        'What was wrong with the book?',
+        'Which dryer number was it?',
+        'What kinds of clothes were inside?',
+        'What did the note say?',
+        'What time did you finally leave?',
+        'Where in the laundromat was the dryer located?',
+      ],
+    },
+    {
+      prompt: "You were on a delayed flight, stuck on the tarmac for over an hour. The person next to you fell asleep and their book slipped into your lap. You read a few pages before you could stop yourself.",
+      fragments: [
+        'It was a water-damaged paperback of "The Remains of the Day" with a cracked spine',
+        'Someone had underlined the phrase "dignity in service" in faint pencil',
+        'A boarding pass from a previous flight was tucked in as a bookmark (gate B7)',
+        'They woke up when the captain announced 45 more minutes and apologized three times',
+      ],
+      hints: [
+        'You were stuck waiting and had nothing to do',
+        'You accidentally saw something personal belonging to a stranger',
+        'It was a book or document of some kind',
+        'The moment ended a bit awkwardly',
+      ],
+      detailQuestions: [
+        'What book was it?',
+        'What phrase or passage had been marked?',
+        'What was being used as a bookmark?',
+        'How did the situation end?',
+        'What condition was the book in?',
+      ],
+    },
+    {
+      prompt: "You were sitting in a hospital waiting room for hours. Across from you, a man got a phone call, listened for about ten seconds, and then started crying silently. No one else seemed to notice.",
+      fragments: [
+        'He was wearing a faded denim jacket with a small enamel pin of a rainbow',
+        'He said "okay" four times in a row, each one quieter than the last',
+        'The clock on the wall was stuck at 3:42 and had been the whole time you were there',
+        'After hanging up he stared at the vending machine for a full minute without moving',
+      ],
+      hints: [
+        'You witnessed someone receive difficult news',
+        'You were in a place where people wait anxiously',
+        'You noticed because everyone else was distracted',
+        'Small details stood out in the stillness',
+      ],
+      detailQuestions: [
+        'What was he wearing that you remember?',
+        'What did he say on the phone?',
+        'What time was the clock stuck on?',
+        'What did he do immediately after hanging up?',
+        'What stood out about his jacket?',
+      ],
+    },
+    {
+      prompt: "You ducked into a used bookstore to get out of the rain. While you waited, you overheard the owner talking to what seemed like a very old friend. They didn't know you were listening.",
+      fragments: [
+        'The owner said "I still have the letter, I just can\'t read it again"',
+        'Rain drummed on a skylight you hadn\'t noticed until then',
+        'The friend was holding a book called "Birds of the Pacific Northwest" but never bought it',
+        'A cat was asleep on a stack of water-stained atlases near the philosophy section',
+      ],
+      hints: [
+        'You took shelter somewhere and ended up staying longer than planned',
+        'You overheard a conversation that felt private',
+        'The place had a certain dusty, quiet atmosphere',
+        'There were small details that made it feel lived-in',
+      ],
+      detailQuestions: [
+        'What did the owner say that stood out to you?',
+        'What sound do you remember from outside?',
+        'What book was the friend holding?',
+        'Was there an animal? What was it doing?',
+        'What section of the store were you near?',
       ],
     },
   ];

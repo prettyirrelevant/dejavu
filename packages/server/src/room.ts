@@ -33,7 +33,7 @@ interface PlayerData {
 }
 
 interface RoundData {
-  witnessId: string;
+  witnessIds: string[];
   memoryPrompt: string;
   fragments: string[];
   hints: string[];
@@ -616,10 +616,20 @@ export class GameRoom extends DurableObject<Env> {
     const scenario = await generateMemoryScenario(this.env.GEMINI_API_KEY);
 
     const playerIds = [...this.state.players.keys()];
-    const witnessId = playerIds[Math.floor(Math.random() * playerIds.length)];
+    const playerCount = playerIds.length;
+
+    let witnessCount: number;
+    if (this.state.config.witnessCount === 'auto') {
+      witnessCount = playerCount <= 4 ? 1 : Math.min(2, Math.floor(playerCount / 3));
+    } else {
+      witnessCount = Math.min(this.state.config.witnessCount, playerCount - 1);
+    }
+
+    const shuffled = [...playerIds].sort(() => Math.random() - 0.5);
+    const witnessIds = shuffled.slice(0, witnessCount);
 
     this.state.roundData = {
-      witnessId,
+      witnessIds,
       memoryPrompt: scenario.prompt,
       fragments: scenario.fragments,
       hints: scenario.hints,
@@ -688,13 +698,13 @@ export class GameRoom extends DurableObject<Env> {
     this.state.phaseEndTime = Date.now() + this.getScaledDuration('roles');
     await this.persistState();
 
-    const { witnessId, fragments, hints } = this.state.roundData;
+    const { witnessIds, fragments, hints } = this.state.roundData;
     const timeRemaining = this.getScaledDuration('roles');
 
     for (const [playerId, session] of this.sessions) {
       if (session.isSpectator) continue;
 
-      const isWitness = playerId === witnessId;
+      const isWitness = witnessIds.includes(playerId);
       const message: ServerMessage = {
         type: 'role_assigned',
         payload: {
@@ -786,23 +796,29 @@ export class GameRoom extends DurableObject<Env> {
     this.state.currentPhase = 'results';
     this.state.phaseEndTime = Date.now() + this.getScaledDuration('results');
 
-    const { witnessId, votes, fragments } = this.state.roundData;
+    const { witnessIds, votes, fragments } = this.state.roundData;
     const roundScores: Record<string, number> = {};
 
     for (const player of this.state.players.values()) {
       roundScores[player.id] = 0;
     }
 
+    // Voters who correctly identified any witness get 10 points
     for (const [voterId, votedForId] of Object.entries(votes)) {
-      if (votedForId === witnessId) {
+      if (witnessIds.includes(votedForId)) {
         roundScores[voterId] = (roundScores[voterId] || 0) + 10;
       }
     }
 
-    const votesForWitness = Object.values(votes).filter((v) => v === witnessId).length;
+    // Witnesses get 5 points for each vote that went to a non-witness
+    const votesForWitnesses = Object.values(votes).filter((v) => witnessIds.includes(v)).length;
     const totalVotes = Object.keys(votes).length;
-    const wrongVotes = totalVotes - votesForWitness;
-    roundScores[witnessId] = (roundScores[witnessId] || 0) + wrongVotes * 5;
+    const wrongVotes = totalVotes - votesForWitnesses;
+    // Divide wrong vote points among all witnesses
+    const pointsPerWitness = Math.floor((wrongVotes * 5) / witnessIds.length);
+    for (const witnessId of witnessIds) {
+      roundScores[witnessId] = (roundScores[witnessId] || 0) + pointsPerWitness;
+    }
 
     for (const [playerId, points] of Object.entries(roundScores)) {
       const player = this.state.players.get(playerId);
@@ -818,13 +834,13 @@ export class GameRoom extends DurableObject<Env> {
       totalScores[player.id] = player.score;
     }
 
-    const witness = this.state.players.get(witnessId);
+    const witnessNames = witnessIds.map((id) => this.state!.players.get(id)?.name || 'Unknown');
     const message: ServerMessage = {
       type: 'round_results',
       payload: {
         roundNumber: this.state.currentRound,
-        witnessIds: [witnessId],
-        witnessNames: [witness?.name || 'Unknown'],
+        witnessIds,
+        witnessNames,
         fragments,
         votes,
         roundScores,

@@ -748,7 +748,7 @@ describe('GameRoom Durable Object', () => {
 
         const roomState = await state.storage.get<any>('state');
         expect(roomState.currentPhase).toBe('memory');
-        witnessId = roomState.roundData.witnessId;
+        witnessId = roomState.roundData.witnessIds[0];
       });
 
       await runDurableObjectAlarm(stub);
@@ -785,7 +785,7 @@ describe('GameRoom Durable Object', () => {
 
       await runInDurableObject(stub, async (instance: GameRoom, state) => {
         const roomState = await state.storage.get<any>('state');
-        witnessId = roomState.roundData.witnessId;
+        witnessId = roomState.roundData.witnessIds[0];
 
         for (let i = 0; i < 3; i++) {
           const isWitness = playerIds[i] === witnessId;
@@ -859,7 +859,7 @@ describe('GameRoom Durable Object', () => {
         );
 
         const roomState = await state.storage.get<any>('state');
-        witnessId = roomState.roundData.witnessId;
+        witnessId = roomState.roundData.witnessIds[0];
       });
 
       await runDurableObjectAlarm(stub);
@@ -870,7 +870,7 @@ describe('GameRoom Durable Object', () => {
       await runInDurableObject(stub, async (instance: GameRoom, state) => {
         const roomState = await state.storage.get<any>('state');
         expect(roomState.currentPhase).toBe('voting');
-        witnessId = roomState.roundData.witnessId;
+        witnessId = roomState.roundData.witnessIds[0];
 
         for (let i = 0; i < 3; i++) {
           const isWitness = playerIds[i] === witnessId;
@@ -941,7 +941,7 @@ describe('GameRoom Durable Object', () => {
         );
 
         const roomState = await state.storage.get<any>('state');
-        witnessId = roomState.roundData.witnessId;
+        witnessId = roomState.roundData.witnessIds[0];
       });
 
       await runDurableObjectAlarm(stub);
@@ -951,7 +951,7 @@ describe('GameRoom Durable Object', () => {
 
       await runInDurableObject(stub, async (instance: GameRoom, state) => {
         const roomState = await state.storage.get<any>('state');
-        witnessId = roomState.roundData.witnessId;
+        witnessId = roomState.roundData.witnessIds[0];
         const nonWitnessId = playerIds.find((id) => id !== witnessId)!;
         const otherNonWitnessId = playerIds.find((id) => id !== witnessId && id !== nonWitnessId);
 
@@ -1146,7 +1146,7 @@ describe('GameRoom Durable Object', () => {
         );
 
         const roomState = await state.storage.get<any>('state');
-        witnessId = roomState.roundData.witnessId;
+        witnessId = roomState.roundData.witnessIds[0];
       });
 
       await runDurableObjectAlarm(stub);
@@ -1156,7 +1156,7 @@ describe('GameRoom Durable Object', () => {
 
       await runInDurableObject(stub, async (instance: GameRoom, state) => {
         const roomState = await state.storage.get<any>('state');
-        witnessId = roomState.roundData.witnessId;
+        witnessId = roomState.roundData.witnessIds[0];
 
         for (let i = 0; i < 3; i++) {
           const isWitness = playerIds[i] === witnessId;
@@ -1237,7 +1237,7 @@ describe('GameRoom Durable Object', () => {
         );
 
         const startedState = await state.storage.get<any>('state');
-        witnessId = startedState.roundData.witnessId;
+        witnessId = startedState.roundData.witnessIds[0];
       });
 
       await runDurableObjectAlarm(stub);
@@ -1247,7 +1247,7 @@ describe('GameRoom Durable Object', () => {
 
       await runInDurableObject(stub, async (instance: GameRoom, state) => {
         const roomState = await state.storage.get<any>('state');
-        witnessId = roomState.roundData.witnessId;
+        witnessId = roomState.roundData.witnessIds[0];
 
         for (let i = 0; i < 3; i++) {
           const isWitness = playerIds[i] === witnessId;
@@ -1334,7 +1334,7 @@ describe('GameRoom Durable Object', () => {
         );
 
         const startedState = await state.storage.get<any>('state');
-        witnessId = startedState.roundData.witnessId;
+        witnessId = startedState.roundData.witnessIds[0];
       });
 
       await runDurableObjectAlarm(stub);
@@ -1344,7 +1344,7 @@ describe('GameRoom Durable Object', () => {
 
       await runInDurableObject(stub, async (instance: GameRoom, state) => {
         const roomState = await state.storage.get<any>('state');
-        witnessId = roomState.roundData.witnessId;
+        witnessId = roomState.roundData.witnessIds[0];
 
         for (let i = 0; i < 3; i++) {
           const isWitness = playerIds[i] === witnessId;
@@ -1389,7 +1389,7 @@ describe('GameRoom Durable Object', () => {
 
       await runInDurableObject(stub, async (instance: GameRoom, state) => {
         const roomState = await state.storage.get<any>('state');
-        witnessId = roomState.roundData.witnessId;
+        witnessId = roomState.roundData.witnessIds[0];
 
         for (let i = 0; i < 3; i++) {
           const isWitness = playerIds[i] === witnessId;
