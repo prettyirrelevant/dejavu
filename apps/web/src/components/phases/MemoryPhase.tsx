@@ -22,9 +22,10 @@ export default function MemoryPhase() {
             <Show
               when={game.memoryPrompt}
               fallback={
-                <div class="flex flex-col items-center gap-3 py-8">
-                  <div class="size-6 animate-pulse border border-border" />
-                  <p class="text-sm text-muted">Loading memory...</p>
+                <div class="flex flex-col items-center gap-3 py-4">
+                  <div class="h-5 w-4/5 animate-pulse bg-muted/20" />
+                  <div class="h-5 w-3/5 animate-pulse bg-muted/20" />
+                  <div class="h-5 w-4/5 animate-pulse bg-muted/20" />
                 </div>
               }
             >

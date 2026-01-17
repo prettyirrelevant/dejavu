@@ -38,7 +38,10 @@ export default function DetailsPhase() {
             <Show
               when={game.detailQuestion}
               fallback={
-                <p class="text-center text-sm text-muted">Loading question...</p>
+                <div class="flex flex-col items-center gap-2">
+                  <div class="h-5 w-3/4 animate-pulse bg-muted/20" />
+                  <div class="h-5 w-1/2 animate-pulse bg-muted/20" />
+                </div>
               }
             >
               <p class="text-center text-lg font-medium text-text">

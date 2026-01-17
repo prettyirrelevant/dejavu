@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from '@solidjs/router';
-import { Switch, Match, Show, createSignal, onMount } from 'solid-js';
+import { Switch, Match, Show, createSignal, onMount, Index } from 'solid-js';
 import { game } from '../stores/game';
 import { reconnectToRoom } from '../lib/game-client';
 import { getSession } from '../lib/storage';
@@ -12,6 +12,56 @@ import DetailsPhase from '../components/phases/DetailsPhase';
 import QuestionsPhase from '../components/phases/QuestionsPhase';
 import VotingPhase from '../components/phases/VotingPhase';
 import ResultsPhase from '../components/phases/ResultsPhase';
+
+function LobbySkeleton(props: { roomCode: string }) {
+  return (
+    <main class="noise-texture notebook-margin min-h-dvh bg-background px-5 py-12 md:px-8 md:py-16">
+      <div class="mx-auto flex max-w-sm flex-col gap-10">
+        <header class="flex flex-col items-center gap-6 text-center">
+          <span class="text-xs font-medium uppercase tracking-[0.3em] text-muted">
+            Room Code
+          </span>
+          <span class="room-code-display text-5xl text-text md:text-6xl">
+            {props.roomCode}
+          </span>
+          <span class="flex items-center gap-2 text-sm text-muted">
+            <div class="size-4 animate-pulse bg-muted/20" />
+            <span>Connecting...</span>
+          </span>
+        </header>
+
+        <section class="flex flex-col gap-4">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs font-medium uppercase tracking-[0.2em] text-muted">
+              Players
+            </span>
+            <div class="h-3 w-16 animate-pulse bg-muted/20" />
+          </div>
+
+          <ul class="flex flex-col gap-2">
+            <Index each={[1, 2, 3]}>
+              {() => (
+                <li class="flex items-center justify-between border border-border bg-surface px-4 py-3">
+                  <div class="flex items-center gap-3">
+                    <div class="size-9 animate-pulse bg-muted/20" />
+                    <div class="flex flex-col gap-1.5">
+                      <div class="h-4 w-24 animate-pulse bg-muted/20" />
+                      <div class="h-3 w-16 animate-pulse bg-muted/20" />
+                    </div>
+                  </div>
+                </li>
+              )}
+            </Index>
+          </ul>
+        </section>
+
+        <footer class="flex flex-col gap-3">
+          <div class="h-13 w-full animate-pulse bg-muted/20" />
+        </footer>
+      </div>
+    </main>
+  );
+}
 
 export default function Room() {
   const params = useParams<{ code: string }>();
@@ -50,15 +100,7 @@ export default function Room() {
   return (
     <main class="min-h-dvh bg-background">
       <Show when={isLoading()}>
-        <div class="flex min-h-dvh items-center justify-center">
-          <div class="flex flex-col items-center gap-4">
-            <svg class="h-8 w-8 animate-spin text-witness" viewBox="0 0 24 24" fill="none">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <p class="text-sm text-muted">Connecting...</p>
-          </div>
-        </div>
+        <LobbySkeleton roomCode={roomCode()} />
       </Show>
 
       <Show when={!isLoading() && game.playerId}>

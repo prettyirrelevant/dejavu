@@ -21,6 +21,7 @@ interface GameStore {
   details: Record<string, string>;
   submittedPlayers: string[];
   votedPlayers: string[];
+  synced: boolean;
 }
 
 const initialState: GameStore = {
@@ -43,6 +44,7 @@ const initialState: GameStore = {
   details: {},
   submittedPlayers: [],
   votedPlayers: [],
+  synced: false,
 };
 
 const [game, setGame] = createStore<GameStore>(initialState);

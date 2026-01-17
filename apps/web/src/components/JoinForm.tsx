@@ -4,7 +4,7 @@ import { PLAYER_NAME_REGEX, PLAYER_NAME_MIN, PLAYER_NAME_MAX, ROOM_CODE_LENGTH }
 import { cn } from '../lib/cn';
 import { user, setUser } from '../stores/user';
 import { joinRoom } from '../lib/game-client';
-import { setName } from '../lib/storage';
+import { setName, getSession } from '../lib/storage';
 
 interface JoinFormProps {
   roomCode?: string;
@@ -59,6 +59,12 @@ export default function JoinForm(props: JoinFormProps) {
     try {
       setName(playerName());
       setUser({ name: playerName() });
+
+      const existingSession = getSession(roomCode());
+      if (existingSession && !props.roomCode) {
+        navigate(`/${roomCode()}`);
+        return;
+      }
 
       await joinRoom(roomCode(), playerName(), joinAsSpectator());
 

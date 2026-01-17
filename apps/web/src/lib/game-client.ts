@@ -30,6 +30,7 @@ function handleMessage(message: ServerMessage): void {
         spectators: [],
         config: config || null,
         phase: 'lobby',
+        synced: true,
       });
       break;
     }
@@ -52,6 +53,7 @@ function handleMessage(message: ServerMessage): void {
         spectators: spectators || [],
         config: config || null,
         phase: 'lobby',
+        synced: true,
       });
       break;
     }
@@ -298,6 +300,7 @@ function handleMessage(message: ServerMessage): void {
           hints: yourHints || [],
           players: players || prev.players,
           isHost: currentPlayer?.isHost ?? prev.isHost,
+          synced: true,
         };
       });
       break;

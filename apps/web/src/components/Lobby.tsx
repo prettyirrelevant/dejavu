@@ -1,8 +1,22 @@
-import { createSignal, For, Show, createMemo } from 'solid-js';
+import { createSignal, For, Show, createMemo, Index } from 'solid-js';
 import { cn } from '../lib/cn';
 import { game } from '../stores/game';
 import { setReady, startGame } from '../lib/game-client';
 import ConnectionIndicator from './ConnectionIndicator';
+
+function PlayerSkeleton() {
+  return (
+    <li class="flex items-center justify-between border border-border bg-surface px-4 py-3">
+      <div class="flex items-center gap-3">
+        <div class="size-9 animate-pulse bg-muted/20" />
+        <div class="flex flex-col gap-1.5">
+          <div class="h-4 w-24 animate-pulse bg-muted/20" />
+          <div class="h-3 w-16 animate-pulse bg-muted/20" />
+        </div>
+      </div>
+    </li>
+  );
+}
 
 interface LobbyProps {
   roomCode: string;
@@ -113,12 +127,20 @@ export default function Lobby(props: LobbyProps) {
             <span class="text-xs font-medium uppercase tracking-[0.2em] text-muted">
               Players
             </span>
-            <span class="text-xs tabular-nums text-muted">
-              {readyCount()} / {totalPlayers()} ready
-            </span>
+            <Show when={game.synced} fallback={<div class="h-3 w-16 animate-pulse bg-muted/20" />}>
+              <span class="text-xs tabular-nums text-muted">
+                {readyCount()} / {totalPlayers()} ready
+              </span>
+            </Show>
           </div>
 
-          <Show when={totalPlayers() > 0}>
+          <Show when={!game.synced}>
+            <ul class="flex flex-col gap-2">
+              <Index each={[1, 2, 3]}>{() => <PlayerSkeleton />}</Index>
+            </ul>
+          </Show>
+
+          <Show when={game.synced && totalPlayers() > 0}>
             <ul class="flex flex-col gap-2">
               <For each={game.players}>
                 {(player, index) => {
@@ -177,7 +199,7 @@ export default function Lobby(props: LobbyProps) {
             </ul>
           </Show>
 
-          <Show when={totalPlayers() === 0}>
+          <Show when={game.synced && totalPlayers() === 0}>
             <div class="flex flex-col items-center gap-3 border border-dashed border-border py-10">
               <svg class="size-8 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -191,34 +213,40 @@ export default function Lobby(props: LobbyProps) {
         </section>
 
         <footer class="flex flex-col gap-3">
-          <Show when={needMorePlayers()}>
-            <p class="text-center text-xs text-muted">
-              Need {3 - totalPlayers()} more player{3 - totalPlayers() !== 1 ? 's' : ''} to start
-            </p>
+          <Show when={!game.synced}>
+            <div class="h-13 w-full animate-pulse bg-muted/20" />
           </Show>
 
-          <Show when={currentPlayer()}>
-            <button
-              type="button"
-              onClick={handleToggleReady}
-              class={cn(
-                'flex h-13 items-center justify-center text-base font-semibold',
-                currentPlayer()?.isReady ? 'btn-secondary' : 'btn-primary'
-              )}
-            >
-              {currentPlayer()?.isReady ? 'Not Ready' : 'Ready'}
-            </button>
-          </Show>
+          <Show when={game.synced}>
+            <Show when={needMorePlayers()}>
+              <p class="text-center text-xs text-muted">
+                Need {3 - totalPlayers()} more player{3 - totalPlayers() !== 1 ? 's' : ''} to start
+              </p>
+            </Show>
 
-          <Show when={game.isHost}>
-            <button
-              type="button"
-              onClick={handleStartGame}
-              disabled={!canStartGame()}
-              class="btn-witness flex h-13 items-center justify-center text-base font-semibold disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              Start Game
-            </button>
+            <Show when={currentPlayer()}>
+              <button
+                type="button"
+                onClick={handleToggleReady}
+                class={cn(
+                  'flex h-13 items-center justify-center text-base font-semibold',
+                  currentPlayer()?.isReady ? 'btn-secondary' : 'btn-primary'
+                )}
+              >
+                {currentPlayer()?.isReady ? 'Not Ready' : 'Ready'}
+              </button>
+            </Show>
+
+            <Show when={game.isHost}>
+              <button
+                type="button"
+                onClick={handleStartGame}
+                disabled={!canStartGame()}
+                class="btn-witness flex h-13 items-center justify-center text-base font-semibold disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                Start Game
+              </button>
+            </Show>
           </Show>
         </footer>
       </div>
