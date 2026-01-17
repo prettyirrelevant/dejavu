@@ -56,6 +56,8 @@ app.get('/rooms/:code', async (c) => {
   const id = c.env.GAME_ROOM.idFromName(roomCode);
   const stub = c.env.GAME_ROOM.get(id);
 
+  await stub.initialize(roomCode);
+
   return stub.fetch(c.req.raw);
 });
 
