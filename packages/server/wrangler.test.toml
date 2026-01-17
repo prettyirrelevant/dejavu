@@ -1,0 +1,17 @@
+name = "dejavu-server-test"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[durable_objects]
+bindings = [{ name = "GAME_ROOM", class_name = "GameRoom" }]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["GameRoom"]
+
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "dejavu_analytics_test"
+
+[vars]
+CALLS_APP_ID = ""

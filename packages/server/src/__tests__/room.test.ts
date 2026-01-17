@@ -704,4 +704,717 @@ describe('GameRoom Durable Object', () => {
       });
     });
   });
+
+  describe('Full Game Flow', () => {
+    it('completes a full round with detail submission and voting', async () => {
+      const id = env.GAME_ROOM.idFromName('full-round');
+      const stub = env.GAME_ROOM.get(id);
+
+      const players: any[] = [];
+      let playerIds: string[] = [];
+      let witnessId: string;
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        await instance.initialize('FULL01');
+
+        for (let i = 0; i < 3; i++) {
+          const ws = createMockWebSocket();
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'join_room',
+              payload: { roomCode: 'FULL01', playerName: `Player${i}` },
+            })
+          );
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'set_ready',
+              payload: { ready: true },
+            })
+          );
+          const joinMsg = getMessagesByType(ws, 'room_joined')[0];
+          playerIds.push(joinMsg.payload.playerId);
+          players.push(ws);
+        }
+
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'start_game',
+            payload: {},
+          })
+        );
+
+        const roomState = await state.storage.get<any>('state');
+        expect(roomState.currentPhase).toBe('memory');
+        witnessId = roomState.roundData.witnessId;
+      });
+
+      await runDurableObjectAlarm(stub);
+      await runInDurableObject(stub, async (_instance: GameRoom, state) => {
+        const roomState = await state.storage.get<any>('state');
+        expect(roomState.currentPhase).toBe('roles');
+      });
+
+      await runDurableObjectAlarm(stub);
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        const roomState = await state.storage.get<any>('state');
+        expect(roomState.currentPhase).toBe('details');
+
+        for (let i = 0; i < 3; i++) {
+          await instance.webSocketMessage(
+            players[i],
+            JSON.stringify({
+              type: 'submit_detail',
+              payload: { answer: `Answer from player ${i}` },
+            })
+          );
+        }
+
+        const updatedState = await state.storage.get<any>('state');
+        expect(updatedState.currentPhase).toBe('questions');
+        expect(Object.keys(updatedState.roundData.playerDetails)).toHaveLength(3);
+      });
+
+      await runDurableObjectAlarm(stub);
+      await runInDurableObject(stub, async (_instance: GameRoom, state) => {
+        const roomState = await state.storage.get<any>('state');
+        expect(roomState.currentPhase).toBe('voting');
+      });
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        const roomState = await state.storage.get<any>('state');
+        witnessId = roomState.roundData.witnessId;
+
+        for (let i = 0; i < 3; i++) {
+          const isWitness = playerIds[i] === witnessId;
+          const targetId = isWitness
+            ? playerIds.find((id) => id !== witnessId)!
+            : witnessId;
+
+          await instance.webSocketMessage(
+            players[i],
+            JSON.stringify({
+              type: 'cast_vote',
+              payload: { targetPlayerId: targetId },
+            })
+          );
+        }
+
+        const updatedState = await state.storage.get<any>('state');
+        expect(updatedState.currentPhase).toBe('results');
+      });
+
+      await runInDurableObject(stub, async (_instance: GameRoom, _state) => {
+        const resultsMessages = getMessagesByType(players[0], 'round_results');
+        expect(resultsMessages.length).toBeGreaterThan(0);
+
+        const results = resultsMessages[resultsMessages.length - 1].payload;
+        expect(results.roundNumber).toBe(1);
+        expect(results.witnessIds).toContain(witnessId);
+        expect(results.fragments).toHaveLength(4);
+        expect(Object.keys(results.votes).length).toBe(3);
+      });
+    });
+
+    it('awards 10 points for correctly identifying witness', async () => {
+      const id = env.GAME_ROOM.idFromName('score-correct');
+      const stub = env.GAME_ROOM.get(id);
+
+      const players: any[] = [];
+      let playerIds: string[] = [];
+      let witnessId: string;
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        await instance.initialize('SCOR01');
+
+        for (let i = 0; i < 3; i++) {
+          const ws = createMockWebSocket();
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'join_room',
+              payload: { roomCode: 'SCOR01', playerName: `Player${i}` },
+            })
+          );
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'set_ready',
+              payload: { ready: true },
+            })
+          );
+          const joinMsg = getMessagesByType(ws, 'room_joined')[0];
+          playerIds.push(joinMsg.payload.playerId);
+          players.push(ws);
+        }
+
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'start_game',
+            payload: {},
+          })
+        );
+
+        const roomState = await state.storage.get<any>('state');
+        witnessId = roomState.roundData.witnessId;
+      });
+
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        const roomState = await state.storage.get<any>('state');
+        expect(roomState.currentPhase).toBe('voting');
+        witnessId = roomState.roundData.witnessId;
+
+        for (let i = 0; i < 3; i++) {
+          const isWitness = playerIds[i] === witnessId;
+          const targetId = isWitness
+            ? playerIds.find((id) => id !== witnessId)!
+            : witnessId;
+
+          await instance.webSocketMessage(
+            players[i],
+            JSON.stringify({
+              type: 'cast_vote',
+              payload: { targetPlayerId: targetId },
+            })
+          );
+        }
+      });
+
+      await runInDurableObject(stub, async (_instance: GameRoom, _state) => {
+        const resultsMessages = getMessagesByType(players[0], 'round_results');
+        const results = resultsMessages[resultsMessages.length - 1].payload;
+
+        for (const [voterId, points] of Object.entries(results.roundScores) as [string, number][]) {
+          if (voterId !== witnessId && results.votes[voterId] === witnessId) {
+            expect(points).toBe(10);
+          }
+        }
+      });
+    });
+
+    it('awards witness points for fooling players', async () => {
+      const id = env.GAME_ROOM.idFromName('score-fool');
+      const stub = env.GAME_ROOM.get(id);
+
+      const players: any[] = [];
+      let playerIds: string[] = [];
+      let witnessId: string;
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        await instance.initialize('FOOL01');
+
+        for (let i = 0; i < 3; i++) {
+          const ws = createMockWebSocket();
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'join_room',
+              payload: { roomCode: 'FOOL01', playerName: `Player${i}` },
+            })
+          );
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'set_ready',
+              payload: { ready: true },
+            })
+          );
+          const joinMsg = getMessagesByType(ws, 'room_joined')[0];
+          playerIds.push(joinMsg.payload.playerId);
+          players.push(ws);
+        }
+
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'start_game',
+            payload: {},
+          })
+        );
+
+        const roomState = await state.storage.get<any>('state');
+        witnessId = roomState.roundData.witnessId;
+      });
+
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        const roomState = await state.storage.get<any>('state');
+        witnessId = roomState.roundData.witnessId;
+        const nonWitnessId = playerIds.find((id) => id !== witnessId)!;
+        const otherNonWitnessId = playerIds.find((id) => id !== witnessId && id !== nonWitnessId);
+
+        for (let i = 0; i < 3; i++) {
+          const targetId = playerIds[i] === nonWitnessId
+            ? (otherNonWitnessId || witnessId)
+            : nonWitnessId;
+
+          await instance.webSocketMessage(
+            players[i],
+            JSON.stringify({
+              type: 'cast_vote',
+              payload: { targetPlayerId: targetId },
+            })
+          );
+        }
+      });
+
+      await runInDurableObject(stub, async (_instance: GameRoom, _state) => {
+        const resultsMessages = getMessagesByType(players[0], 'round_results');
+        const results = resultsMessages[resultsMessages.length - 1].payload;
+
+        expect(results.roundScores[witnessId]).toBeGreaterThan(0);
+      });
+    });
+
+    it('prevents self-voting', async () => {
+      const id = env.GAME_ROOM.idFromName('no-self-vote');
+      const stub = env.GAME_ROOM.get(id);
+
+      const players: any[] = [];
+      let playerIds: string[] = [];
+
+      await runInDurableObject(stub, async (instance: GameRoom) => {
+        await instance.initialize('SELF01');
+
+        for (let i = 0; i < 3; i++) {
+          const ws = createMockWebSocket();
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'join_room',
+              payload: { roomCode: 'SELF01', playerName: `Player${i}` },
+            })
+          );
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'set_ready',
+              payload: { ready: true },
+            })
+          );
+          const joinMsg = getMessagesByType(ws, 'room_joined')[0];
+          playerIds.push(joinMsg.payload.playerId);
+          players.push(ws);
+        }
+
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'start_game',
+            payload: {},
+          })
+        );
+      });
+
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'cast_vote',
+            payload: { targetPlayerId: playerIds[0] },
+          })
+        );
+
+        const roomState = await state.storage.get<any>('state');
+        expect(Object.keys(roomState.roundData.votes)).toHaveLength(0);
+      });
+    });
+
+    it('prevents double voting', async () => {
+      const id = env.GAME_ROOM.idFromName('no-double-vote');
+      const stub = env.GAME_ROOM.get(id);
+
+      const players: any[] = [];
+      let playerIds: string[] = [];
+
+      await runInDurableObject(stub, async (instance: GameRoom) => {
+        await instance.initialize('DBLV01');
+
+        for (let i = 0; i < 3; i++) {
+          const ws = createMockWebSocket();
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'join_room',
+              payload: { roomCode: 'DBLV01', playerName: `Player${i}` },
+            })
+          );
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'set_ready',
+              payload: { ready: true },
+            })
+          );
+          const joinMsg = getMessagesByType(ws, 'room_joined')[0];
+          playerIds.push(joinMsg.payload.playerId);
+          players.push(ws);
+        }
+
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'start_game',
+            payload: {},
+          })
+        );
+      });
+
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'cast_vote',
+            payload: { targetPlayerId: playerIds[1] },
+          })
+        );
+
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'cast_vote',
+            payload: { targetPlayerId: playerIds[2] },
+          })
+        );
+
+        const roomState = await state.storage.get<any>('state');
+        expect(Object.keys(roomState.roundData.votes)).toHaveLength(1);
+        expect(roomState.roundData.votes[playerIds[0]]).toBe(playerIds[1]);
+      });
+    });
+
+    it('advances to next round when host continues', async () => {
+      const id = env.GAME_ROOM.idFromName('next-round');
+      const stub = env.GAME_ROOM.get(id);
+
+      const players: any[] = [];
+      let playerIds: string[] = [];
+      let witnessId: string;
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        await instance.initialize('NEXT01');
+
+        for (let i = 0; i < 3; i++) {
+          const ws = createMockWebSocket();
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'join_room',
+              payload: { roomCode: 'NEXT01', playerName: `Player${i}` },
+            })
+          );
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'set_ready',
+              payload: { ready: true },
+            })
+          );
+          const joinMsg = getMessagesByType(ws, 'room_joined')[0];
+          playerIds.push(joinMsg.payload.playerId);
+          players.push(ws);
+        }
+
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'start_game',
+            payload: {},
+          })
+        );
+
+        const roomState = await state.storage.get<any>('state');
+        witnessId = roomState.roundData.witnessId;
+      });
+
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        const roomState = await state.storage.get<any>('state');
+        witnessId = roomState.roundData.witnessId;
+
+        for (let i = 0; i < 3; i++) {
+          const isWitness = playerIds[i] === witnessId;
+          const targetId = isWitness
+            ? playerIds.find((id) => id !== witnessId)!
+            : witnessId;
+
+          await instance.webSocketMessage(
+            players[i],
+            JSON.stringify({
+              type: 'cast_vote',
+              payload: { targetPlayerId: targetId },
+            })
+          );
+        }
+
+        const updatedState = await state.storage.get<any>('state');
+        expect(updatedState.currentPhase).toBe('results');
+        expect(updatedState.currentRound).toBe(1);
+
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'continue_game',
+            payload: {},
+          })
+        );
+
+        const finalState = await state.storage.get<any>('state');
+        expect(finalState.currentRound).toBe(2);
+        expect(finalState.currentPhase).toBe('memory');
+      });
+    });
+
+    it('ends game after final round', async () => {
+      const id = env.GAME_ROOM.idFromName('game-end');
+      const stub = env.GAME_ROOM.get(id);
+
+      const players: any[] = [];
+      let playerIds: string[] = [];
+      let witnessId: string;
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        await instance.initialize('ENDG01');
+
+        const roomState = await state.storage.get<any>('state');
+        roomState.config.rounds = 1;
+        await state.storage.put('state', roomState);
+        await instance.initialize('ENDG01');
+
+        for (let i = 0; i < 3; i++) {
+          const ws = createMockWebSocket();
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'join_room',
+              payload: { roomCode: 'ENDG01', playerName: `Player${i}` },
+            })
+          );
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'set_ready',
+              payload: { ready: true },
+            })
+          );
+          const joinMsg = getMessagesByType(ws, 'room_joined')[0];
+          playerIds.push(joinMsg.payload.playerId);
+          players.push(ws);
+        }
+
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'start_game',
+            payload: {},
+          })
+        );
+
+        const startedState = await state.storage.get<any>('state');
+        witnessId = startedState.roundData.witnessId;
+      });
+
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        const roomState = await state.storage.get<any>('state');
+        witnessId = roomState.roundData.witnessId;
+
+        for (let i = 0; i < 3; i++) {
+          const isWitness = playerIds[i] === witnessId;
+          const targetId = isWitness
+            ? playerIds.find((id) => id !== witnessId)!
+            : witnessId;
+
+          await instance.webSocketMessage(
+            players[i],
+            JSON.stringify({
+              type: 'cast_vote',
+              payload: { targetPlayerId: targetId },
+            })
+          );
+        }
+
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'continue_game',
+            payload: {},
+          })
+        );
+
+        const finalState = await state.storage.get<any>('state');
+        expect(finalState.gameState).toBe('finished');
+      });
+
+      await runInDurableObject(stub, async (_instance: GameRoom, _state) => {
+        const gameFinishedMessages = getMessagesByType(players[0], 'game_finished');
+        expect(gameFinishedMessages.length).toBeGreaterThan(0);
+
+        const finished = gameFinishedMessages[gameFinishedMessages.length - 1].payload;
+        expect(finished.reason).toBe('completed');
+        expect(finished.winner).toBeDefined();
+        expect(finished.winner.id).toBeDefined();
+        expect(finished.finalScores).toBeDefined();
+      });
+    });
+
+    it('accumulates scores across multiple rounds', async () => {
+      const id = env.GAME_ROOM.idFromName('multi-round');
+      const stub = env.GAME_ROOM.get(id);
+
+      const players: any[] = [];
+      let playerIds: string[] = [];
+      let witnessId: string;
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        await instance.initialize('MULT01');
+
+        const roomState = await state.storage.get<any>('state');
+        roomState.config.rounds = 2;
+        await state.storage.put('state', roomState);
+        await instance.initialize('MULT01');
+
+        for (let i = 0; i < 3; i++) {
+          const ws = createMockWebSocket();
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'join_room',
+              payload: { roomCode: 'MULT01', playerName: `Player${i}` },
+            })
+          );
+          await instance.webSocketMessage(
+            ws,
+            JSON.stringify({
+              type: 'set_ready',
+              payload: { ready: true },
+            })
+          );
+          const joinMsg = getMessagesByType(ws, 'room_joined')[0];
+          playerIds.push(joinMsg.payload.playerId);
+          players.push(ws);
+        }
+
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'start_game',
+            payload: {},
+          })
+        );
+
+        const startedState = await state.storage.get<any>('state');
+        witnessId = startedState.roundData.witnessId;
+      });
+
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        const roomState = await state.storage.get<any>('state');
+        witnessId = roomState.roundData.witnessId;
+
+        for (let i = 0; i < 3; i++) {
+          const isWitness = playerIds[i] === witnessId;
+          const targetId = isWitness
+            ? playerIds.find((id) => id !== witnessId)!
+            : witnessId;
+
+          await instance.webSocketMessage(
+            players[i],
+            JSON.stringify({
+              type: 'cast_vote',
+              payload: { targetPlayerId: targetId },
+            })
+          );
+        }
+      });
+
+      let round1Scores: Record<string, number> = {};
+      await runInDurableObject(stub, async (_instance: GameRoom, _state) => {
+        const resultsMessages = getMessagesByType(players[0], 'round_results');
+        const results = resultsMessages[resultsMessages.length - 1].payload;
+        round1Scores = results.totalScores;
+      });
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        await instance.webSocketMessage(
+          players[0],
+          JSON.stringify({
+            type: 'continue_game',
+            payload: {},
+          })
+        );
+
+        const roomState = await state.storage.get<any>('state');
+        expect(roomState.currentRound).toBe(2);
+      });
+
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+      await runDurableObjectAlarm(stub);
+
+      await runInDurableObject(stub, async (instance: GameRoom, state) => {
+        const roomState = await state.storage.get<any>('state');
+        witnessId = roomState.roundData.witnessId;
+
+        for (let i = 0; i < 3; i++) {
+          const isWitness = playerIds[i] === witnessId;
+          const targetId = isWitness
+            ? playerIds.find((id) => id !== witnessId)!
+            : witnessId;
+
+          await instance.webSocketMessage(
+            players[i],
+            JSON.stringify({
+              type: 'cast_vote',
+              payload: { targetPlayerId: targetId },
+            })
+          );
+        }
+      });
+
+      await runInDurableObject(stub, async (_instance: GameRoom, _state) => {
+        const resultsMessages = getMessagesByType(players[0], 'round_results');
+        const results = resultsMessages[resultsMessages.length - 1].payload;
+
+        for (const playerId of playerIds) {
+          expect(results.totalScores[playerId]).toBeGreaterThanOrEqual(round1Scores[playerId] || 0);
+        }
+      });
+    });
+  });
 });

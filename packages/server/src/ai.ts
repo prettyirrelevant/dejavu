@@ -14,7 +14,11 @@ const SCENARIO_CATEGORIES = [
   'memorable event',
 ];
 
-export async function generateMemoryScenario(ai: Ai): Promise<MemoryScenario> {
+export async function generateMemoryScenario(ai: Ai | undefined): Promise<MemoryScenario> {
+  if (!ai) {
+    return getFallbackScenario();
+  }
+
   const category = SCENARIO_CATEGORIES[Math.floor(Math.random() * SCENARIO_CATEGORIES.length)];
 
   const systemPrompt = `You are creating content for a social deduction game called "DÉJÀ VU" where one player is a witness with real memories and others must fake having the same memory.
