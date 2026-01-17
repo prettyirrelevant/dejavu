@@ -14,7 +14,10 @@ export interface Env {
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.use('*', cors());
+app.use('*', cors({
+  origin: ['http://localhost:5173', 'https://dejavu.enio.la'],
+  credentials: true,
+}));
 
 function generateRoomCode(): string {
   let code = '';
@@ -66,6 +69,7 @@ app.all('/partytracks/*', async (c) => {
     token: c.env.CALLS_APP_SECRET,
     request: c.req.raw,
     prefix: '/partytracks',
+    lockSessionToInitiator: false,
   });
 });
 

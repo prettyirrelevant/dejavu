@@ -3,7 +3,7 @@ import toast from 'solid-toast';
 import confetti from 'canvas-confetti';
 import { createRoom, getWebSocketUrl } from './api';
 import { setSession, getSession, clearSession } from './storage';
-import { setGame, resetGame } from '../stores/game';
+import { game, setGame, resetGame } from '../stores/game';
 import { setConnection } from '../stores/connection';
 import { WebSocketClient } from './ws';
 
@@ -464,10 +464,24 @@ export function leaveRoom(): void {
 
 export function submitDetail(answer: string): void {
   send({ type: 'submit_detail', payload: { answer } });
+  const playerId = game.playerId;
+  if (playerId && !game.submittedPlayers.includes(playerId)) {
+    setGame((prev) => ({
+      ...prev,
+      submittedPlayers: [...prev.submittedPlayers, playerId],
+    }));
+  }
 }
 
 export function castVote(targetPlayerId: string): void {
   send({ type: 'cast_vote', payload: { targetPlayerId } });
+  const playerId = game.playerId;
+  if (playerId && !game.votedPlayers.includes(playerId)) {
+    setGame((prev) => ({
+      ...prev,
+      votedPlayers: [...prev.votedPlayers, playerId],
+    }));
+  }
 }
 
 export function continueGame(): void {

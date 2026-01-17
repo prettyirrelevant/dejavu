@@ -13,12 +13,12 @@ export const QUESTION_MAX_LENGTH = 200;
 export const ANSWER_MAX_LENGTH = 200;
 
 export const PHASE_DURATIONS = {
-  memory: 5000,
-  roles: 5000,
-  details: 45000,
-  questions: 90000,
+  memory: 15000,
+  roles: 10000,
+  details: 60000,
+  questions: 60000,
   voting: 30000,
-  results: 10000,
+  results: 15000,
 } as const;
 
 export const HEARTBEAT_INTERVAL = 2000;
