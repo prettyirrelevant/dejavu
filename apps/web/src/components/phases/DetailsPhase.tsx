@@ -54,49 +54,68 @@ export default function DetailsPhase() {
             when={!hasSubmitted() && !hasAlreadySubmitted()}
             fallback={
               <div class="flex flex-col gap-6">
-                <div class="border border-success/30 bg-success/5 p-6">
-                  <div class="flex flex-col items-center gap-2">
-                    <svg
-                      class="size-6 text-success"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      aria-hidden="true"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    <p class="text-sm font-medium text-text">Answer Submitted</p>
-                    <p class="text-xs text-muted">Waiting for other players...</p>
+                <div class="border-2 border-success/20 bg-success/5 p-8">
+                  <div class="flex flex-col items-center gap-4">
+                    <div class="flex size-12 items-center justify-center border-2 border-success/30 bg-success/10">
+                      <svg
+                        class="size-6 text-success"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </div>
+                    <div class="flex flex-col items-center gap-1">
+                      <p class="text-base font-medium text-text">Answer Submitted</p>
+                      <p class="text-sm text-muted">Your response has been recorded</p>
+                    </div>
                   </div>
                 </div>
 
-                <div class="flex flex-col gap-3">
-                  <div class="flex items-center justify-between px-1">
+                <div class="flex flex-col gap-4">
+                  <div class="flex items-center gap-4">
+                    <span class="h-px flex-1 bg-border" />
                     <span class="text-xs font-medium uppercase tracking-[0.2em] text-muted">
-                      Submissions
+                      Waiting for others
                     </span>
-                    <span class="text-xs tabular-nums text-muted">
-                      {submittedCount()} / {totalPlayers()}
-                    </span>
+                    <span class="h-px flex-1 bg-border" />
                   </div>
+                  
+                  <div class="flex items-center justify-center gap-2 py-2">
+                    <span class="text-2xl font-medium tabular-nums text-text">{submittedCount()}</span>
+                    <span class="text-lg text-muted">/</span>
+                    <span class="text-2xl font-medium tabular-nums text-muted">{totalPlayers()}</span>
+                    <span class="ml-2 text-sm text-muted">submitted</span>
+                  </div>
+
                   <ul class="flex flex-col gap-1">
                     <For each={game.players}>
                       {(player) => {
                         const submitted = game.submittedPlayers.includes(player.id);
                         return (
-                          <li class="flex items-center justify-between border border-border px-3 py-2">
-                            <span class="text-sm text-text">{player.name}</span>
+                          <li class="flex items-center justify-between border border-border bg-surface px-4 py-3">
+                            <div class="flex items-center gap-2">
+                              <span class="text-sm font-medium text-text">{player.name}</span>
+                              <Show when={player.id === game.playerId}>
+                                <span class="text-xs text-muted">(you)</span>
+                              </Show>
+                            </div>
                             <Show
                               when={submitted}
                               fallback={
-                                <span class="text-xs text-muted">Writing...</span>
+                                <span class="flex items-center gap-1.5 text-xs text-muted">
+                                  <span class="inline-block size-1.5 animate-pulse rounded-full bg-muted" />
+                                  Writing
+                                </span>
                               }
                             >
                               <svg
-                                class="size-4 text-success"
+                                class="size-5 text-success"
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 stroke="currentColor"
@@ -127,7 +146,7 @@ export default function DetailsPhase() {
                   placeholder="Describe your memory of this detail..."
                   maxLength={280}
                   rows={4}
-                  class="input-field w-full resize-none p-4 text-sm"
+                  class="input-field w-full resize-none p-4 text-sm text-text placeholder:text-muted/60"
                 />
                 <div class="flex justify-end">
                   <span class="text-xs tabular-nums text-muted">

@@ -5,7 +5,7 @@ import { game } from '../../stores/game';
 export default function MemoryPhase() {
   return (
     <main class="notebook-margin min-h-dvh bg-background px-5 py-12 md:px-8 md:py-16">
-      <div class="mx-auto flex max-w-md flex-col gap-10">
+      <div class="mx-auto flex max-w-md flex-col gap-12">
         <header class="flex flex-col items-center gap-4 text-center">
           <div class="flex items-center gap-3 text-xs font-medium uppercase tracking-[0.3em] text-muted">
             <span>Round {game.round}</span>
@@ -17,34 +17,52 @@ export default function MemoryPhase() {
           </h1>
         </header>
 
-        <section class="flex flex-col gap-6">
-          <div class="border border-border bg-surface p-6 md:p-8">
-            <Show
-              when={game.memoryPrompt}
-              fallback={
-                <div class="flex flex-col items-center gap-3 py-4">
-                  <div class="h-5 w-4/5 animate-pulse bg-muted/20" />
-                  <div class="h-5 w-3/5 animate-pulse bg-muted/20" />
-                  <div class="h-5 w-4/5 animate-pulse bg-muted/20" />
+        <section class="flex flex-col gap-8">
+          <div class="relative">
+            <div class="pointer-events-none absolute -left-2 -top-2 size-6 border-l-2 border-t-2 border-text/20" />
+            <div class="pointer-events-none absolute -right-2 -top-2 size-6 border-r-2 border-t-2 border-text/20" />
+            <div class="pointer-events-none absolute -bottom-2 -left-2 size-6 border-b-2 border-l-2 border-text/20" />
+            <div class="pointer-events-none absolute -bottom-2 -right-2 size-6 border-b-2 border-r-2 border-text/20" />
+            
+            <div class="border-2 border-text/10 bg-surface p-8 md:p-10">
+              <Show
+                when={game.memoryPrompt}
+                fallback={
+                  <div class="flex flex-col items-center gap-4 py-6">
+                    <div class="h-6 w-4/5 animate-pulse bg-muted/15" />
+                    <div class="h-6 w-3/5 animate-pulse bg-muted/15" />
+                    <div class="h-6 w-4/5 animate-pulse bg-muted/15" />
+                  </div>
+                }
+              >
+                <div class="flex flex-col gap-6">
+                  <span class="select-none font-serif text-5xl leading-none text-text/15">"</span>
+                  
+                  <p class="text-pretty px-2 text-center font-serif text-xl leading-relaxed tracking-wide text-text md:text-2xl">
+                    {game.memoryPrompt}
+                  </p>
+                  
+                  <span class="select-none self-end font-serif text-5xl leading-none text-text/15">"</span>
                 </div>
-              }
-            >
-              <p class="text-pretty text-center text-lg leading-relaxed text-text md:text-xl">
-                {game.memoryPrompt}
-              </p>
-            </Show>
+              </Show>
+            </div>
           </div>
 
-          <div class="flex flex-col items-center gap-2">
-            <p class="text-xs font-medium uppercase tracking-[0.2em] text-muted">
-              Memorize this scenario
-            </p>
+          <div class="flex flex-col items-center gap-3">
+            <div class="flex items-center gap-4">
+              <span class="h-px w-8 bg-border" />
+              <p class="text-xs font-medium uppercase tracking-[0.25em] text-muted">
+                Commit to Memory
+              </p>
+              <span class="h-px w-8 bg-border" />
+            </div>
             <Timer />
           </div>
         </section>
 
-        <footer class="flex justify-center">
-          <p class="max-w-xs text-center text-sm text-muted">
+        <footer class="flex flex-col items-center gap-3">
+          <div class="h-px w-16 bg-border-subtle" />
+          <p class="max-w-xs text-center text-sm leading-relaxed text-muted">
             Everyone sees the same memory. Soon you'll discover your role.
           </p>
         </footer>

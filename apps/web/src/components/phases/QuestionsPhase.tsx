@@ -27,38 +27,44 @@ export default function QuestionsPhase() {
           </p>
         </header>
 
-        <section class="flex flex-col gap-4">
+        <section class="flex flex-col gap-6">
           <Show when={game.detailQuestion}>
-            <div class="border border-border bg-surface p-4">
-              <p class="text-center text-sm text-muted">
-                <span class="font-medium text-text">Q:</span> {game.detailQuestion}
-              </p>
+            <div class="border-2 border-text/10 bg-surface p-5">
+              <div class="flex flex-col items-center gap-2">
+                <span class="text-xs font-medium uppercase tracking-[0.2em] text-muted">The Question</span>
+                <p class="text-center text-base font-medium text-text">
+                  {game.detailQuestion}
+                </p>
+              </div>
             </div>
           </Show>
 
-          <div class="flex flex-col gap-3">
-            <div class="flex items-center justify-between px-1">
+          <div class="flex flex-col gap-4">
+            <div class="flex items-center gap-4">
+              <span class="h-px flex-1 bg-border" />
               <span class="text-xs font-medium uppercase tracking-[0.2em] text-muted">
-                Responses
+                {game.players.length} Responses
               </span>
-              <span class="text-xs text-muted">
-                {game.players.length} players
-              </span>
+              <span class="h-px flex-1 bg-border" />
             </div>
 
-            <ul class="flex flex-col gap-2">
+            <ul class="flex flex-col gap-3">
               <For each={playerAnswers()}>
-                {({ player, answer }) => {
+                {({ player, answer }, index) => {
                   const isYou = player.id === game.playerId;
                   return (
                     <li
                       class={cn(
                         'border border-border bg-surface',
-                        player.connectionStatus === 'dropped' && 'opacity-50'
+                        player.connectionStatus === 'dropped' && 'opacity-50',
+                        isYou && 'border-text/20'
                       )}
                     >
-                      <div class="flex items-center justify-between border-b border-border px-4 py-2">
-                        <div class="flex items-center gap-2">
+                      <div class="flex items-center justify-between border-b border-border bg-background/50 px-4 py-2.5">
+                        <div class="flex items-center gap-3">
+                          <span class="flex size-6 items-center justify-center border border-border text-xs font-medium text-muted">
+                            {index() + 1}
+                          </span>
                           <span class="font-medium text-text">{player.name}</span>
                           <Show when={isYou}>
                             <span class="text-xs text-muted">(you)</span>
@@ -73,7 +79,7 @@ export default function QuestionsPhase() {
                           </span>
                         </Show>
                       </div>
-                      <div class="p-4">
+                      <div class="p-5">
                         <Show
                           when={answer}
                           fallback={
@@ -84,7 +90,7 @@ export default function QuestionsPhase() {
                             </p>
                           }
                         >
-                          <p class="text-sm text-text">{answer}</p>
+                          <p class="text-base leading-relaxed text-text">{answer}</p>
                         </Show>
                       </div>
                     </li>

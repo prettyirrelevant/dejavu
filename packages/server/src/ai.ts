@@ -1,3 +1,5 @@
+import { GoogleGenAI } from '@google/genai';
+
 export interface MemoryScenario {
   prompt: string;
   fragments: string[];
@@ -14,14 +16,14 @@ const SCENARIO_CATEGORIES = [
   'memorable event',
 ];
 
-export async function generateMemoryScenario(ai: Ai | undefined): Promise<MemoryScenario> {
-  if (!ai) {
+export async function generateMemoryScenario(geminiApiKey: string | undefined): Promise<MemoryScenario> {
+  if (!geminiApiKey) {
     return getFallbackScenario();
   }
 
   const category = SCENARIO_CATEGORIES[Math.floor(Math.random() * SCENARIO_CATEGORIES.length)];
 
-  const systemPrompt = `You are creating content for a social deduction game called "DÉJÀ VU" where one player is a witness with real memories and others must fake having the same memory.
+  const prompt = `You are creating content for a social deduction game called "DÉJÀ VU" where one player is a witness with real memories and others must fake having the same memory.
 
 Generate a ${category} scenario. Respond in this exact JSON format only, no other text:
 {
@@ -34,19 +36,19 @@ Generate a ${category} scenario. Respond in this exact JSON format only, no othe
 Make the scenario intriguing and the fragments very specific (exact colors, times, numbers, words). Hints should be vague enough that imposters can make up plausible answers.`;
 
   try {
-    const result = await ai.run('@cf/meta/llama-3-8b-instruct', {
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: 'Generate a new scenario.' },
-      ],
+    const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: prompt,
+      config: {
+        temperature: 0.9,
+        maxOutputTokens: 1024,
+      },
     });
 
-    const response = typeof result === 'object' && result !== null && 'response' in result
-      ? (result as { response: string }).response
-      : null;
-
-    if (response) {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
+    const text = response.text;
+    if (text) {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]) as MemoryScenario;
         if (parsed.prompt && parsed.fragments?.length && parsed.hints?.length && parsed.detailQuestions?.length) {

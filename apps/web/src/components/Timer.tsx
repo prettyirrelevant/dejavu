@@ -1,4 +1,4 @@
-import { createMemo } from 'solid-js';
+import { createSignal, createMemo, createEffect, onCleanup } from 'solid-js';
 import { cn } from '../lib/cn';
 import { game } from '../stores/game';
 
@@ -7,10 +7,23 @@ interface TimerProps {
 }
 
 export default function Timer(props: TimerProps) {
-  const minutes = createMemo(() => Math.floor(game.timeRemaining / 60));
-  const seconds = createMemo(() => game.timeRemaining % 60);
-  const isLow = createMemo(() => game.timeRemaining <= 10);
-  const isCritical = createMemo(() => game.timeRemaining <= 5);
+  const [localTime, setLocalTime] = createSignal(0);
+
+  createEffect(() => {
+    const serverTime = Math.floor(game.timeRemaining / 1000);
+    setLocalTime(serverTime);
+
+    const interval = setInterval(() => {
+      setLocalTime((prev) => Math.max(0, prev - 1));
+    }, 1000);
+
+    onCleanup(() => clearInterval(interval));
+  });
+
+  const minutes = createMemo(() => Math.floor(localTime() / 60));
+  const seconds = createMemo(() => localTime() % 60);
+  const isLow = createMemo(() => localTime() <= 10);
+  const isCritical = createMemo(() => localTime() <= 5);
 
   const formattedTime = createMemo(() => {
     const m = minutes().toString().padStart(2, '0');

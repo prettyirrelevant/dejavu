@@ -358,7 +358,6 @@ export async function joinRoom(roomCode: string, playerName: string, asSpectator
       } else if (message.type === 'error') {
         clearTimeout(timeout);
         client?.setMessageHandler(originalHandler!);
-        handleMessage(message);
         reject(new Error(message.payload.message));
       } else {
         handleMessage(message);

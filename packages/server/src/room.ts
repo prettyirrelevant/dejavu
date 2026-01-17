@@ -605,7 +605,7 @@ export class GameRoom extends DurableObject<Env> {
   private async startRound(): Promise<void> {
     if (!this.state) return;
 
-    const scenario = await generateMemoryScenario(this.env.AI);
+    const scenario = await generateMemoryScenario(this.env.GEMINI_API_KEY);
 
     const playerIds = [...this.state.players.keys()];
     const witnessId = playerIds[Math.floor(Math.random() * playerIds.length)];
@@ -943,7 +943,7 @@ export class GameRoom extends DurableObject<Env> {
 
 interface Env {
   GAME_ROOM: DurableObjectNamespace<GameRoom>;
-  AI: Ai;
+  GEMINI_API_KEY: string;
   ANALYTICS?: AnalyticsEngineDataset;
   CALLS_APP_ID: string;
   CALLS_APP_SECRET: string;
