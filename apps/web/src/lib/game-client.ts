@@ -2,7 +2,7 @@ import type { ClientMessage, RoomConfig, ServerMessage } from '@dejavu/shared';
 import toast from 'solid-toast';
 import confetti from 'canvas-confetti';
 import { createRoom, getWebSocketUrl } from './api';
-import { setSession, getSession } from './storage';
+import { setSession, getSession, clearSession } from './storage';
 import { setGame, resetGame } from '../stores/game';
 import { setConnection } from '../stores/connection';
 import { WebSocketClient } from './ws';
@@ -376,20 +376,41 @@ export async function reconnectToRoom(roomCode: string): Promise<boolean> {
   const session = getSession(roomCode);
   if (!session) return false;
 
-  setGame((prev) => ({
-    ...prev,
-    roomCode,
-    playerId: session.playerId,
-  }));
-
   await connectToRoom(roomCode);
   
-  send({
-    type: 'reconnect',
-    payload: { roomCode, sessionToken: session.token },
-  });
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      resolve(false);
+    }, 10000);
 
-  return true;
+    const originalHandler = client?.getMessageHandler();
+    
+    client?.setMessageHandler((message: ServerMessage) => {
+      if (message.type === 'reconnect_success') {
+        clearTimeout(timeout);
+        client?.setMessageHandler(originalHandler!);
+        setGame((prev) => ({
+          ...prev,
+          roomCode,
+          playerId: session.playerId,
+        }));
+        handleMessage(message);
+        resolve(true);
+      } else if (message.type === 'error') {
+        clearTimeout(timeout);
+        client?.setMessageHandler(originalHandler!);
+        clearSession(roomCode);
+        resolve(false);
+      } else {
+        handleMessage(message);
+      }
+    });
+
+    send({
+      type: 'reconnect',
+      payload: { roomCode, sessionToken: session.token },
+    });
+  });
 }
 
 async function connectToRoom(roomCode: string): Promise<void> {
