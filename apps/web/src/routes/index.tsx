@@ -1,6 +1,7 @@
 import { createSignal, Show } from 'solid-js';
 import CreateForm from '../components/CreateForm';
 import JoinForm from '../components/JoinForm';
+import HowToPlay from '../components/HowToPlay';
 
 type View = 'create' | 'join';
 
@@ -64,7 +65,8 @@ export default function Home() {
           </section>
         </div>
 
-        <footer class="flex justify-center">
+        <footer class="flex flex-col items-center gap-4">
+          <HowToPlay />
           <div class="flex items-center gap-4 text-xs text-muted">
             <span>3–8 players</span>
             <span class="h-px w-4 bg-border" />

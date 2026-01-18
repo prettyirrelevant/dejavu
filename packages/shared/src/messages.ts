@@ -389,9 +389,16 @@ export interface ReconnectSuccessMessage {
     gameState: string;
     currentPhase: Phase;
     roundNumber: number;
+    totalRounds: number;
     yourRole?: Role;
     yourFragments?: string[];
     yourHints?: string[];
+    memoryPrompt?: string;
+    detailQuestion?: string;
+    details?: Record<string, string>;
+    witnessIds?: string[];
+    witnessNames?: string[];
+    timeRemaining: number;
     players: Player[];
     scores: Record<string, number>;
     phaseData: Record<string, unknown>;

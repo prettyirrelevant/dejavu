@@ -3,6 +3,7 @@ import { cn } from '../lib/cn';
 import { game } from '../stores/game';
 import { setReady, startGame } from '../lib/game-client';
 import ConnectionIndicator from './ConnectionIndicator';
+import HowToPlay from './HowToPlay';
 
 function PlayerSkeleton() {
   return (
@@ -247,6 +248,10 @@ export default function Lobby(props: LobbyProps) {
                 Start Game
               </button>
             </Show>
+
+            <div class="flex justify-center pt-2">
+              <HowToPlay />
+            </div>
           </Show>
         </footer>
       </div>

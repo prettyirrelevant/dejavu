@@ -510,12 +510,27 @@ export class GameRoom extends DurableObject<Env> {
 
     await this.persistState();
 
+    const isWitness = this.state.roundData?.witnessIds.includes(player.id) ?? false;
+    const isResultsPhase = this.state.currentPhase === 'results';
+
     const response: ServerMessage = {
       type: 'reconnect_success',
       payload: {
         gameState: this.state.gameState,
         currentPhase: this.state.currentPhase,
         roundNumber: this.state.currentRound,
+        totalRounds: this.state.config.rounds,
+        yourRole: this.state.roundData ? (isWitness ? 'witness' : 'imposter') : undefined,
+        yourFragments: isWitness ? this.state.roundData?.fragments : undefined,
+        yourHints: !isWitness ? this.state.roundData?.hints : undefined,
+        memoryPrompt: this.state.roundData?.memoryPrompt,
+        detailQuestion: this.state.roundData?.detailQuestions[this.state.roundData.currentQuestionIndex],
+        details: this.state.currentPhase === 'questions' || isResultsPhase ? this.state.roundData?.playerDetails : undefined,
+        witnessIds: isResultsPhase ? this.state.roundData?.witnessIds : undefined,
+        witnessNames: isResultsPhase ? this.state.roundData?.witnessIds.map(
+          (id) => this.state!.players.get(id)?.name || 'Unknown'
+        ) : undefined,
+        timeRemaining: Math.max(0, this.state.phaseEndTime - Date.now()),
         players: this.getPlayersArray(),
         scores: Object.fromEntries([...this.state.players.values()].map((p) => [p.id, p.score])),
         phaseData: {},

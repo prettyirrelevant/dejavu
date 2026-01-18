@@ -291,17 +291,43 @@ function handleMessage(message: ServerMessage): void {
     }
 
     case 'reconnect_success': {
-      const { currentPhase, roundNumber, yourRole, yourFragments, yourHints, players } = message.payload;
+      const { 
+        currentPhase, 
+        roundNumber, 
+        totalRounds,
+        yourRole, 
+        yourFragments, 
+        yourHints, 
+        memoryPrompt,
+        detailQuestion,
+        details,
+        witnessIds,
+        witnessNames,
+        timeRemaining,
+        players,
+        scores,
+      } = message.payload;
       setGame((prev) => {
         const currentPlayer = players?.find((p) => p.id === prev.playerId);
+        const playersWithScores = players?.map((p) => ({
+          ...p,
+          score: scores?.[p.id] ?? p.score ?? 0,
+        })) || prev.players;
         return {
           ...prev,
           phase: currentPhase,
           round: roundNumber,
-          role: yourRole || null,
-          fragments: yourFragments || [],
-          hints: yourHints || [],
-          players: players || prev.players,
+          totalRounds: totalRounds || prev.totalRounds,
+          role: yourRole || prev.role,
+          fragments: yourFragments || prev.fragments,
+          hints: yourHints || prev.hints,
+          memoryPrompt: memoryPrompt || prev.memoryPrompt,
+          detailQuestion: detailQuestion || prev.detailQuestion,
+          details: details || prev.details,
+          witnessIds: witnessIds || prev.witnessIds,
+          witnessNames: witnessNames || prev.witnessNames,
+          timeRemaining: timeRemaining ?? prev.timeRemaining,
+          players: playersWithScores,
           isHost: currentPlayer?.isHost ?? prev.isHost,
           synced: true,
         };
