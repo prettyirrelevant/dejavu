@@ -37,7 +37,7 @@ export default function HowToPlay() {
                 <h3 class="font-semibold text-text mb-2">The Concept</h3>
                 <p class="text-muted">
                   Something strange happened and everyone claims they saw it. But only the 
-                  <span class="text-witness font-medium"> Witness</span> actually knows the real details.
+                  <span class="text-witness font-medium"> Witnesses</span> (one or two players) actually know the real details.
                   Everyone else is an <span class="text-imposter font-medium">Imposter</span> making things up.
                   Your job is to figure out who's telling the truth.
                 </p>
@@ -92,7 +92,7 @@ export default function HowToPlay() {
                     <span class="flex size-5 items-center justify-center rounded-full bg-muted/20 text-xs font-medium">5</span>
                     <div>
                       <span class="text-text font-medium">Vote</span>
-                      <p class="text-xs mt-0.5">Everyone votes for who they think is the Witness. You cannot vote for yourself. Results are revealed after everyone votes.</p>
+                      <p class="text-xs mt-0.5">Everyone votes for who they think is a Witness. You cannot vote for yourself. Results are revealed after everyone votes.</p>
                     </div>
                   </li>
                 </ol>
@@ -103,11 +103,11 @@ export default function HowToPlay() {
                 <ul class="flex flex-col gap-2 text-muted">
                   <li class="flex gap-2 items-start">
                     <span class="text-success font-bold w-8">+10</span>
-                    <span>You correctly voted for the Witness</span>
+                    <span>You correctly voted for a Witness</span>
                   </li>
                   <li class="flex gap-2 items-start">
                     <span class="text-witness font-bold w-8">+5</span>
-                    <span>You're the Witness and someone voted for the wrong person</span>
+                    <span>You're a Witness and someone voted for the wrong person</span>
                   </li>
                 </ul>
                 <p class="text-xs text-muted/70 mt-2">The player with the most points after all rounds wins!</p>
@@ -116,7 +116,7 @@ export default function HowToPlay() {
               <section class="border-t border-border pt-4">
                 <h3 class="font-semibold text-text mb-2">Tips</h3>
                 <ul class="flex flex-col gap-1.5 text-xs text-muted">
-                  <li><span class="text-witness">Witnesses:</span> Don't be too accurate. Throw in a small "mistake" to seem like you're guessing too.</li>
+                  <li><span class="text-witness">Witnesses:</span> Don't be too accurate. Throw in a small "mistake" to seem like you're guessing too. If there are two Witnesses, don't give each other away by having identical answers!</li>
                   <li><span class="text-imposter">Imposters:</span> Confidence sells. Pick specific details and commit to them fully.</li>
                   <li><span class="text-text">Everyone:</span> Pay attention to how people defend their answers, not just what they wrote.</li>
                 </ul>
