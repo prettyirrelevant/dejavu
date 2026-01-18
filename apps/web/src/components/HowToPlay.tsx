@@ -34,16 +34,16 @@ export default function HowToPlay(props: HowToPlayProps) {
 
       <Show when={isOpen()}>
         <div
-          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm md:items-center md:p-4"
           onClick={(e) => e.target === e.currentTarget && handleClose()}
         >
-          <div class="max-h-[85vh] w-full max-w-md overflow-y-auto bg-background">
-            <div class="sticky top-0 flex items-center justify-between border-b border-border bg-background px-6 py-4">
+          <div class="max-h-[90vh] w-full overflow-y-auto bg-background md:max-h-[85vh] md:max-w-md md:border md:border-border">
+            <div class="sticky top-0 flex items-center justify-between border-b border-border bg-background px-5 py-4 md:px-6">
               <h2 class="text-lg font-semibold text-text tracking-tight">How to Play</h2>
               <button
                 type="button"
                 onClick={handleClose}
-                class="text-muted hover:text-text transition-colors"
+                class="size-8 flex items-center justify-center text-muted hover:text-text transition-colors"
               >
                 <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                   <path d="M18 6L6 18M6 6l12 12" />
@@ -52,7 +52,7 @@ export default function HowToPlay(props: HowToPlayProps) {
             </div>
 
             <div class="flex flex-col divide-y divide-border">
-              <section class="px-6 py-5">
+              <section class="px-5 py-4 md:px-6 md:py-5">
                 <p class="text-sm text-muted leading-relaxed">
                   Something strange happened. One or two of you actually saw it.
                   The rest are making it up. Find the <span class="text-witness">Witness</span> before 
@@ -60,7 +60,7 @@ export default function HowToPlay(props: HowToPlayProps) {
                 </p>
               </section>
 
-              <section class="px-6 py-5">
+              <section class="px-5 py-4 md:px-6 md:py-5">
                 <h3 class="text-xs font-medium uppercase tracking-widest text-muted/60 mb-4">Roles</h3>
                 <div class="space-y-4">
                   <div>
@@ -78,7 +78,7 @@ export default function HowToPlay(props: HowToPlayProps) {
                 </div>
               </section>
 
-              <section class="px-6 py-5">
+              <section class="px-5 py-4 md:px-6 md:py-5">
                 <h3 class="text-xs font-medium uppercase tracking-widest text-muted/60 mb-4">Flow</h3>
                 <div class="space-y-4">
                   <div class="flex gap-4">
@@ -119,7 +119,7 @@ export default function HowToPlay(props: HowToPlayProps) {
                 </div>
               </section>
 
-              <section class="px-6 py-5">
+              <section class="px-5 py-4 md:px-6 md:py-5">
                 <h3 class="text-xs font-medium uppercase tracking-widest text-muted/60 mb-4">Points</h3>
                 <div class="space-y-2">
                   <div class="flex items-baseline justify-between">
@@ -134,7 +134,7 @@ export default function HowToPlay(props: HowToPlayProps) {
                 <p class="text-xs text-muted/50 mt-3">Most points after all rounds wins.</p>
               </section>
 
-              <section class="px-6 py-5 bg-surface/50">
+              <section class="px-5 py-4 pb-8 bg-surface/50 md:px-6 md:py-5 md:pb-5">
                 <h3 class="text-xs font-medium uppercase tracking-widest text-muted/60 mb-3">Quick tips</h3>
                 <ul class="space-y-2 text-sm text-muted">
                   <li><span class="text-witness">Witnesses</span> · Don't be perfect. Small mistakes make you look human.</li>
