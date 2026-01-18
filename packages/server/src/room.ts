@@ -609,6 +609,10 @@ export class GameRoom extends DurableObject<Env> {
     if (player.isHost && this.state.players.size > 0) {
       await this.transferHost(playerId);
     }
+
+    if (this.state.gameState === 'playing' && this.state.players.size < MIN_PLAYERS) {
+      await this.endGame('insufficient_players');
+    }
   }
 
   private async transferHost(previousHostId: string): Promise<void> {
