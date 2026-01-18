@@ -11,8 +11,6 @@ export default function CreateForm() {
   const [playerName, setPlayerName] = createSignal(user.name);
   const [rounds, setRounds] = createSignal<3 | 5 | 7>(5);
   const [timeScale, setTimeScale] = createSignal<number>(1.0);
-  const [maxPlayers, setMaxPlayers] = createSignal<number>(6);
-  const [witnessCount, setWitnessCount] = createSignal<'auto' | 1 | 2>('auto');
   const [allowSpectators, setAllowSpectators] = createSignal<boolean>(true);
   const [isSubmitting, setIsSubmitting] = createSignal(false);
   const [error, setError] = createSignal('');
@@ -44,8 +42,8 @@ export default function CreateForm() {
       const roomCode = await createAndJoinRoom(playerName(), {
         rounds: rounds(),
         timeScale: timeScale(),
-        maxPlayers: maxPlayers(),
-        witnessCount: witnessCount(),
+        maxPlayers: 8,
+        witnessCount: 'auto',
         allowSpectators: allowSpectators(),
         voiceEnabled: false,
       });
@@ -149,53 +147,6 @@ export default function CreateForm() {
             </div>
             <p class="text-xs text-muted">
               How much time you get for each phase
-            </p>
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <label for="max-players" class="text-sm font-medium text-text">
-              Player limit
-            </label>
-            <div class="grid grid-cols-3 gap-2">
-              {([4, 6, 8] as const).map((num) => (
-                <button
-                  type="button"
-                  onClick={() => setMaxPlayers(num)}
-                  class={cn(
-                    'h-12 text-sm font-medium transition-all duration-100',
-                    maxPlayers() === num
-                      ? 'border border-text bg-background text-text'
-                      : 'border border-border bg-surface text-muted hover:text-text hover:border-muted'
-                  )}
-                >
-                  Up to {num}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-2">
-            <label for="witness-count" class="text-sm font-medium text-text">
-              Witnesses per round
-            </label>
-            <div class="grid grid-cols-3 gap-2">
-              {(['auto', 1, 2] as const).map((val) => (
-                <button
-                  type="button"
-                  onClick={() => setWitnessCount(val)}
-                  class={cn(
-                    'h-12 text-sm font-medium transition-all duration-100',
-                    witnessCount() === val
-                      ? 'border border-text bg-background text-text'
-                      : 'border border-border bg-surface text-muted hover:text-text hover:border-muted'
-                  )}
-                >
-                  {val === 'auto' ? 'Auto' : val}
-                </button>
-              ))}
-            </div>
-            <p class="text-xs text-muted">
-              Auto picks based on player count
             </p>
           </div>
 
