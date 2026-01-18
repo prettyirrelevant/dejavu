@@ -1,9 +1,10 @@
-import { createSignal, For, Show, createMemo, Index } from 'solid-js';
+import { createSignal, For, Show, createMemo, Index, lazy } from 'solid-js';
 import { cn } from '../lib/cn';
 import { game } from '../stores/game';
 import { setReady, startGame } from '../lib/game-client';
 import ConnectionIndicator from './ConnectionIndicator';
-import HowToPlay from './HowToPlay';
+
+const HowToPlay = lazy(() => import('./HowToPlay'));
 
 function PlayerSkeleton() {
   return (
@@ -40,6 +41,15 @@ function getAvatarColor(index: number) {
 
 export default function Lobby(props: LobbyProps) {
   const [copied, setCopied] = createSignal(false);
+  const [showHowToPlay, setShowHowToPlay] = createSignal(false);
+  const [bannerDismissed, setBannerDismissed] = createSignal(
+    localStorage.getItem('dejavu:how-to-play-dismissed') === 'true'
+  );
+
+  const dismissBanner = () => {
+    setBannerDismissed(true);
+    localStorage.setItem('dejavu:how-to-play-dismissed', 'true');
+  };
 
   const readyCount = createMemo(() => game.players.filter((p) => p.isReady).length);
   const totalPlayers = createMemo(() => game.players.length);
@@ -122,6 +132,35 @@ export default function Lobby(props: LobbyProps) {
             </span>
           </button>
         </header>
+
+        <Show when={!bannerDismissed()}>
+          <div class="relative border border-witness/30 bg-witness/5 p-4">
+            <button
+              type="button"
+              onClick={dismissBanner}
+              class="absolute right-2 top-2 p-1 text-muted transition-colors hover:text-text"
+              aria-label="Dismiss"
+            >
+              <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+            <div class="flex flex-col gap-2 pr-6">
+              <p class="text-sm font-medium text-text">First time?</p>
+              <p class="text-xs text-muted">
+                One player remembers everything. The rest are faking it. Your job? Find the real witness.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowHowToPlay(true)}
+                class="mt-1 self-start text-xs font-medium text-witness underline-offset-2 hover:underline"
+              >
+                Learn how to play
+              </button>
+            </div>
+          </div>
+        </Show>
 
         <section class="flex flex-col gap-4">
           <div class="flex items-center justify-between px-1">
@@ -249,16 +288,18 @@ export default function Lobby(props: LobbyProps) {
               </button>
             </Show>
 
-            <div class="flex justify-center pt-2">
-              <HowToPlay />
-            </div>
-
             <p class="pt-4 text-center text-[11px] text-muted/70">
-              Rooms self-destruct after 10 idle minutes. No pressure.
+              Room closes 5 min after everyone leaves
             </p>
           </Show>
         </footer>
       </div>
+
+      <HowToPlay 
+        open={showHowToPlay()} 
+        onClose={() => setShowHowToPlay(false)} 
+        showTrigger={false} 
+      />
     </main>
   );
 }

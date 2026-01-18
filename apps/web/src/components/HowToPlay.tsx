@@ -1,29 +1,48 @@
-import { createSignal, Show } from 'solid-js';
+import { createSignal, Show, createEffect } from 'solid-js';
 
-export default function HowToPlay() {
-  const [isOpen, setIsOpen] = createSignal(false);
+interface HowToPlayProps {
+  open?: boolean;
+  onClose?: () => void;
+  showTrigger?: boolean;
+}
+
+export default function HowToPlay(props: HowToPlayProps) {
+  const [isOpen, setIsOpen] = createSignal(props.open ?? false);
+
+  createEffect(() => {
+    if (props.open !== undefined) {
+      setIsOpen(props.open);
+    }
+  });
+
+  const handleClose = () => {
+    setIsOpen(false);
+    props.onClose?.();
+  };
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        class="text-sm text-muted underline underline-offset-2 hover:text-text"
-      >
-        How to Play
-      </button>
+      <Show when={props.showTrigger !== false}>
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          class="text-sm text-muted underline underline-offset-2 hover:text-text"
+        >
+          How to Play
+        </button>
+      </Show>
 
       <Show when={isOpen()}>
         <div
           class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-          onClick={(e) => e.target === e.currentTarget && setIsOpen(false)}
+          onClick={(e) => e.target === e.currentTarget && handleClose()}
         >
           <div class="max-h-[85vh] w-full max-w-md overflow-y-auto bg-background">
             <div class="sticky top-0 flex items-center justify-between border-b border-border bg-background px-6 py-4">
               <h2 class="text-lg font-semibold text-text tracking-tight">How to Play</h2>
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={handleClose}
                 class="text-muted hover:text-text transition-colors"
               >
                 <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
