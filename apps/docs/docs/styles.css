@@ -1,7 +1,7 @@
 :root {
   --vocs-color_background: #fefefe;
   --vocs-color_backgroundDark: #f8f8f8;
-  --vocs-fontFamily_default: 'Lato', system-ui, sans-serif;
+  --vocs-fontFamily_default: 'IBM Plex Sans', system-ui, sans-serif;
 }
 
 :root.dark {
