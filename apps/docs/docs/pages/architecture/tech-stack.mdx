@@ -1,0 +1,212 @@
+# Tech Stack
+
+DEJAVU is built with modern, edge-first technologies. This page explains what we use and why.
+
+## Frontend
+
+### SolidJS
+
+```bash
+solid-js ^1.9.0
+```
+
+SolidJS powers the reactive UI. Chosen for:
+
+- **Fine-grained reactivity** — Only the parts of the DOM that need to update actually update
+- **No virtual DOM** — Direct DOM manipulation means faster renders
+- **Familiar syntax** — JSX feels like React, but compiles to efficient vanilla JS
+- **Small bundle** — ~7KB gzipped core
+
+:::tip
+The game has frequent state updates (timers, player actions, voice status), and SolidJS handles these without re-rendering entire component trees.
+:::
+
+### Tailwind CSS v4
+
+```bash
+tailwindcss ^4.0.0
+@tailwindcss/vite ^4.0.0
+```
+
+Tailwind v4 provides utility-first styling with:
+
+- **CSS-first configuration** — No more `tailwind.config.js`
+- **Lightning CSS** — Faster builds via native tooling
+- **Better Vite integration** — First-class plugin support
+
+The game uses a custom theme with semantic colors (`witness`, `imposter`, `success`) defined in CSS variables.
+
+### Vite
+
+```bash
+vite ^6.2.0
+vite-plugin-solid ^2.11.0
+```
+
+Build tooling with:
+
+- **Instant HMR** — Sub-second updates during development
+- **Optimized production builds** — Tree-shaking, code splitting
+- **Native ESM** — No bundler overhead in dev mode
+
+## Backend
+
+### Cloudflare Workers
+
+The API runs entirely on Cloudflare's edge network:
+
+- **Global deployment** — Code runs in 300+ data centers
+- **No cold starts** — Workers stay warm
+- **~50ms latency** — Requests hit the nearest edge location
+- **Generous free tier** — 100K requests/day
+
+### Hono
+
+```bash
+hono ^4.7.0
+```
+
+Lightweight web framework for Workers:
+
+```typescript [index.ts] showLineNumbers
+const app = new Hono<{ Bindings: Env }>();
+
+app.post('/rooms', async (c) => {
+  const roomCode = generateRoomCode();
+  const stub = c.env.GAME_ROOM.get(id);
+  await stub.initialize(roomCode);
+  return c.json({ roomCode }, 201);  // [!code hl]
+});
+```
+
+Hono provides:
+- **Minimal overhead** — ~14KB, optimized for edge
+- **Full TypeScript** — Type-safe bindings and context
+- **Middleware** — CORS, auth, logging built-in
+
+### Durable Objects
+
+Cloudflare's stateful compute primitive:
+
+```typescript [room.ts] showLineNumbers
+export class GameRoom extends DurableObject<Env> {
+  private state: RoomState | null = null;
+  
+  async webSocketMessage(ws: WebSocket, message: string) {  // [!code focus]
+    // Handle game messages  // [!code focus]
+  }  // [!code focus]
+}
+```
+
+:::info[Why Durable Objects?]
+- **Single instance per room** — No distributed state coordination
+- **Built-in WebSocket management** — `acceptWebSocket()` handles upgrades
+- **Persistent storage** — State survives restarts
+- **Alarms** — Built-in timers for phase transitions
+:::
+
+Each game room is a single Durable Object instance, guaranteeing no race conditions.
+
+## Voice Chat
+
+### Daily.co
+
+```bash
+@daily-co/daily-js ^0.85.0
+```
+
+WebRTC voice chat via Daily.co:
+
+- **No TURN server management** — Daily handles infrastructure
+- **Speaking detection** — Real-time audio level events
+- **Room API** — Programmatic room creation/expiration
+
+Rooms are created server-side when the game starts:
+
+```typescript [voice.ts] showLineNumbers
+await fetch('https://api.daily.co/v1/rooms', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${DAILY_API_KEY}` },  // [!code hl]
+  body: JSON.stringify({
+    name: `dejavu-${roomCode}`,
+    properties: { exp: Math.floor(Date.now() / 1000) + 3600 }  // [!code hl]
+  })
+});
+```
+
+## AI
+
+### Google Gemini 2.0 Flash
+
+```bash
+@google/genai ^1.37.0
+```
+
+Scenario generation uses Gemini:
+
+```typescript [ai.ts] showLineNumbers
+const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+const response = await ai.models.generateContent({
+  model: 'gemini-2.0-flash',  // [!code hl]
+  contents: prompt,
+  config: { temperature: 0.9, maxOutputTokens: 1024 }  // [!code hl]
+});
+```
+
+:::tip[Why Gemini?]
+- **Fast inference** — "Flash" variant optimized for speed
+- **Creative output** — High temperature for varied scenarios
+- **JSON mode** — Reliable structured output
+- **Generous quota** — 1500 requests/min on free tier
+:::
+
+Falls back to pre-written scenarios if AI generation fails.
+
+## Shared Code
+
+### @dejavu/shared
+
+Monorepo package with:
+
+```typescript [shared/index.ts] showLineNumbers
+// Types
+export type Phase = 'lobby' | 'memory' | 'roles' | ...;
+export type Role = 'witness' | 'imposter';
+export interface Player { ... }
+
+// Schemas
+export const CastVoteSchema = z.object({
+  type: z.literal('cast_vote'),
+  payload: z.object({ targetPlayerId: z.string() })
+});
+
+// Constants
+export const PHASE_DURATIONS = {
+  memory: 15000,
+  roles: 20000,
+  details: 45000,
+  // ...
+};
+```
+
+Shared between frontend and backend via pnpm workspaces.
+
+## Development Tools
+
+| Tool | Purpose |
+|------|---------|
+| **pnpm** | Fast, disk-efficient package manager |
+| **TypeScript 5.8** | Type safety across the stack |
+| **Wrangler 4.0** | Cloudflare Workers CLI |
+| **Vitest** | Fast unit testing |
+| **oxlint** | Rust-based linter |
+
+## Deployment
+
+- **Frontend**: Cloudflare Pages
+- **Backend**: Cloudflare Workers (via Wrangler)
+- **CI**: GitHub Actions
+
+:::note
+See [Deployment](/deployment) for setup instructions.
+:::

@@ -1,0 +1,599 @@
+# WebSocket Protocol
+
+All game communication happens over WebSockets using JSON messages. This page documents the complete protocol.
+
+## Connection
+
+Connect to a room via WebSocket:
+
+```
+wss://dejavu-api.enio.la/rooms/{ROOM_CODE}
+```
+
+:::info
+The server expects an HTTP upgrade request. After connection, send a `join_room` or `reconnect` message.
+:::
+
+## Message Format
+
+All messages follow this structure:
+
+```typescript [Message]
+{
+  type: string;
+  payload: object;
+}
+```
+
+Messages are validated using Zod schemas from `@dejavu/shared`.
+
+---
+
+## Client Messages
+
+Messages sent from client to server.
+
+:::details[create_room]
+Create a new room (sent to new room endpoint).
+
+```typescript
+{
+  "type": "create_room",
+  "payload": {
+    "playerName": "Alice",
+    "config": {
+      "rounds": 5,
+      "timeScale": 1.0,
+      "maxPlayers": 6,
+      "witnessCount": "auto",
+      "allowSpectators": true,
+      "voiceEnabled": true
+    }
+  }
+}
+```
+:::
+
+:::details[join_room]
+Join an existing room.
+
+```typescript
+{
+  "type": "join_room",
+  "payload": {
+    "roomCode": "ABC123",
+    "playerName": "Bob",
+    "asSpectator": false
+  }
+}
+```
+:::
+
+:::details[set_ready]
+Toggle ready status in lobby.
+
+```typescript
+{
+  "type": "set_ready",
+  "payload": {
+    "ready": true
+  }
+}
+```
+:::
+
+:::details[start_game]
+Start the game (host only).
+
+```typescript
+{
+  "type": "start_game",
+  "payload": {}
+}
+```
+:::
+
+:::details[leave_room]
+Leave the current room.
+
+```typescript
+{
+  "type": "leave_room",
+  "payload": {}
+}
+```
+:::
+
+:::details[submit_detail]
+Submit answer during details phase. Max length: 280 characters.
+
+```typescript
+{
+  "type": "submit_detail",
+  "payload": {
+    "answer": "7 frozen pizzas"
+  }
+}
+```
+:::
+
+:::details[ask_question]
+Ask another player a question during questions phase. Max length: 200 characters.
+
+```typescript
+{
+  "type": "ask_question",
+  "payload": {
+    "targetPlayerId": "p12345",
+    "question": "Why did you say 5 pizzas?"
+  }
+}
+```
+:::
+
+:::details[answer_question]
+Answer a question directed at you. Max length: 200 characters.
+
+```typescript
+{
+  "type": "answer_question",
+  "payload": {
+    "questionId": "q98765",
+    "answer": "I meant to say 7, typo"
+  }
+}
+```
+:::
+
+:::details[call_vote]
+Request to start voting phase early. Voting starts when 50% of players call for it.
+
+```typescript
+{
+  "type": "call_vote",
+  "payload": {}
+}
+```
+:::
+
+:::details[cast_vote]
+Vote for who you think is a witness. Cannot vote for yourself.
+
+```typescript
+{
+  "type": "cast_vote",
+  "payload": {
+    "targetPlayerId": "p12345"
+  }
+}
+```
+:::
+
+:::details[continue_game]
+Proceed to next round or end game (host only, during results).
+
+```typescript
+{
+  "type": "continue_game",
+  "payload": {}
+}
+```
+:::
+
+:::details[reconnect]
+Reconnect to a room with existing session.
+
+```typescript
+{
+  "type": "reconnect",
+  "payload": {
+    "roomCode": "ABC123",
+    "sessionToken": "ABC123.p12345.1234567890.abcd1234"
+  }
+}
+```
+:::
+
+:::details[ping]
+Heartbeat to maintain connection.
+
+```typescript
+{
+  "type": "ping",
+  "payload": {
+    "clientTime": 1234567890123
+  }
+}
+```
+:::
+
+:::details[voice_mute / voice_deafen]
+Update voice status.
+
+```typescript
+{
+  "type": "voice_mute",
+  "payload": { "muted": true }
+}
+```
+:::
+
+---
+
+## Server Messages
+
+Messages sent from server to client.
+
+:::details[room_created]
+Response to `create_room`.
+
+```typescript
+{
+  "type": "room_created",
+  "payload": {
+    "roomCode": "ABC123",
+    "sessionToken": "ABC123.p12345.1234567890.abcd1234",
+    "playerId": "p12345",
+    "isHost": true,
+    "config": { ... },
+    "voiceToken": "..." // if voice enabled
+  }
+}
+```
+:::
+
+:::details[room_joined]
+Response to `join_room`.
+
+```typescript
+{
+  "type": "room_joined",
+  "payload": {
+    "roomCode": "ABC123",
+    "sessionToken": "ABC123.p67890.1234567890.efgh5678",
+    "playerId": "p67890",
+    "isHost": false,
+    "isSpectator": false,
+    "players": [...],
+    "spectators": [...],
+    "config": { ... }
+  }
+}
+```
+:::
+
+:::details[player_joined]
+Broadcast when a player joins.
+
+```typescript
+{
+  "type": "player_joined",
+  "payload": {
+    "player": { "id": "p67890", "name": "Bob", ... },
+    "isSpectator": false
+  }
+}
+```
+:::
+
+:::details[player_left]
+Broadcast when a player leaves.
+
+```typescript
+{
+  "type": "player_left",
+  "payload": {
+    "playerId": "p67890",
+    "playerName": "Bob",
+    "reason": "left" | "kicked" | "disconnected"
+  }
+}
+```
+:::
+
+:::details[player_ready_changed]
+Broadcast when ready status changes.
+
+```typescript
+{
+  "type": "player_ready_changed",
+  "payload": {
+    "playerId": "p67890",
+    "ready": true
+  }
+}
+```
+:::
+
+:::details[player_connection_changed]
+Broadcast when connection status changes.
+
+```typescript
+{
+  "type": "player_connection_changed",
+  "payload": {
+    "playerId": "p67890",
+    "status": "connected" | "stale" | "degraded" | "dropped"
+  }
+}
+```
+:::
+
+:::details[host_transferred]
+Broadcast when host changes.
+
+```typescript
+{
+  "type": "host_transferred",
+  "payload": {
+    "newHostId": "p67890",
+    "newHostName": "Bob",
+    "previousHostId": "p12345"
+  }
+}
+```
+:::
+
+:::details[game_started]
+Broadcast when game begins.
+
+```typescript
+{
+  "type": "game_started",
+  "payload": {
+    "totalRounds": 5,
+    "players": [{ "id": "p12345", "name": "Alice" }, ...],
+    "voiceRoomUrl": "https://dejavu.daily.co/dejavu-abc123"
+  }
+}
+```
+:::
+
+:::details[round_started]
+Broadcast at start of each round.
+
+```typescript
+{
+  "type": "round_started",
+  "payload": {
+    "roundNumber": 1,
+    "totalRounds": 5
+  }
+}
+```
+:::
+
+:::details[memory_revealed]
+Broadcast during memory phase.
+
+```typescript
+{
+  "type": "memory_revealed",
+  "payload": {
+    "prompt": "You were at the grocery store...",
+    "timeRemaining": 15000
+  }
+}
+```
+:::
+
+:::details[role_assigned]
+Sent individually to each player.
+
+:::code-group
+
+```typescript [Witness]
+{
+  "type": "role_assigned",
+  "payload": {
+    "role": "witness",
+    "fragments": ["He had 7 pizzas", "Orange crocs", ...],
+    "timeRemaining": 20000
+  }
+}
+```
+
+```typescript [Imposter]
+{
+  "type": "role_assigned",
+  "payload": {
+    "role": "imposter",
+    "hints": ["Someone unusual appeared", ...],
+    "timeRemaining": 20000
+  }
+}
+```
+
+:::
+:::
+
+:::details[detail_question]
+Broadcast during details phase.
+
+```typescript
+{
+  "type": "detail_question",
+  "payload": {
+    "question": "How many pizzas were in his cart?",
+    "timeRemaining": 45000
+  }
+}
+```
+:::
+
+:::details[player_submitted_detail]
+Broadcast when a player submits.
+
+```typescript
+{
+  "type": "player_submitted_detail",
+  "payload": {
+    "playerId": "p12345",
+    "playerName": "Alice"
+  }
+}
+```
+:::
+
+:::details[details_revealed]
+Broadcast at start of questions phase.
+
+```typescript
+{
+  "type": "details_revealed",
+  "payload": {
+    "details": {
+      "p12345": "7 frozen pizzas",
+      "p67890": "5 or 6"
+    },
+    "timeRemaining": 45000
+  }
+}
+```
+:::
+
+:::details[voting_started]
+Broadcast at start of voting phase.
+
+```typescript
+{
+  "type": "voting_started",
+  "payload": {
+    "timeRemaining": 15000
+  }
+}
+```
+:::
+
+:::details[player_voted]
+Broadcast when a player votes (target not revealed).
+
+```typescript
+{
+  "type": "player_voted",
+  "payload": {
+    "playerId": "p12345",
+    "playerName": "Alice"
+  }
+}
+```
+:::
+
+:::details[round_results]
+Broadcast at end of round.
+
+```typescript
+{
+  "type": "round_results",
+  "payload": {
+    "roundNumber": 1,
+    "witnessIds": ["p12345"],
+    "witnessNames": ["Alice"],
+    "fragments": ["7 pizzas", "Orange crocs", ...],
+    "votes": { "p67890": "p12345", "p12345": "p67890" },
+    "roundScores": { "p67890": 10, "p12345": 0 },
+    "totalScores": { "p67890": 10, "p12345": 0 },
+    "timeRemaining": 15000
+  }
+}
+```
+:::
+
+:::details[game_finished]
+Broadcast when game ends.
+
+```typescript
+{
+  "type": "game_finished",
+  "payload": {
+    "reason": "completed" | "insufficient_players" | "host_ended",
+    "finalScores": { "p12345": 45, "p67890": 30 },
+    "winner": { "id": "p12345", "name": "Alice", "score": 45 },
+    "stats": { ... },
+    "roundsCompleted": 5,
+    "roundsTotal": 5
+  }
+}
+```
+:::
+
+:::details[reconnect_success]
+Response to successful reconnection.
+
+```typescript
+{
+  "type": "reconnect_success",
+  "payload": {
+    "gameState": "playing",
+    "currentPhase": "questions",
+    "roundNumber": 2,
+    "totalRounds": 5,
+    "yourRole": "witness",
+    "yourFragments": [...],
+    "memoryPrompt": "...",
+    "detailQuestion": "...",
+    "details": { ... },
+    "timeRemaining": 30000,
+    "players": [...],
+    "scores": { ... }
+  }
+}
+```
+:::
+
+:::details[pong]
+Response to `ping`.
+
+```typescript
+{
+  "type": "pong",
+  "payload": {
+    "serverTime": 1234567890123
+  }
+}
+```
+:::
+
+:::details[error]
+Sent when an action fails.
+
+```typescript
+{
+  "type": "error",
+  "payload": {
+    "code": "ROOM_FULL" | "NOT_HOST" | "INVALID_PHASE" | ...,
+    "message": "Room is full"
+  }
+}
+```
+:::
+
+:::details[room_closed]
+Sent when room is closing.
+
+```typescript
+{
+  "type": "room_closed",
+  "payload": {
+    "reason": "timeout" | "host_ended"
+  }
+}
+```
+:::
+
+---
+
+## Error Codes
+
+| Code | Description |
+|------|-------------|
+| `ROOM_NOT_FOUND` | Room doesn't exist |
+| `ROOM_FULL` | Room at max capacity |
+| `INVALID_ACTION` | Action not allowed |
+| `NOT_HOST` | Only host can do this |
+| `GAME_IN_PROGRESS` | Can't join mid-game |
+| `INVALID_PHASE` | Wrong phase for this action |
+| `RATE_LIMITED` | Too many requests |
+| `INVALID_SESSION` | Session token invalid |
+| `INVALID_MESSAGE` | Malformed message |
+| `NAME_TAKEN` | Player name already in use |

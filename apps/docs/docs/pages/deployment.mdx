@@ -1,0 +1,271 @@
+# Deployment
+
+DEJAVU runs on Cloudflare's edge network. This guide covers deploying both the backend (Workers) and frontend (Pages).
+
+## Prerequisites
+
+- [Cloudflare account](https://dash.cloudflare.com/sign-up)
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) installed
+- [pnpm](https://pnpm.io/) package manager
+- API keys for [Google Gemini](https://ai.google.dev/) and [Daily.co](https://www.daily.co/)
+
+## Environment Variables
+
+The backend requires these secrets:
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `GEMINI_API_KEY` | Google AI API key for scenario generation | Yes |
+| `DAILY_API_KEY` | Daily.co API key for voice rooms | No (voice disabled if missing) |
+
+:::warning
+Never commit API keys to your repository. Use `wrangler secret` to set them securely.
+:::
+
+## Backend Deployment
+
+The server package deploys to Cloudflare Workers with Durable Objects.
+
+::::steps
+
+### Configure Wrangler
+
+Create or update `packages/server/wrangler.toml`:
+
+```toml [wrangler.toml]
+name = "dejavu-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[durable_objects]
+bindings = [
+  { name = "GAME_ROOM", class_name = "GameRoom" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["GameRoom"]
+```
+
+### Set Secrets
+
+```bash [Terminal]
+cd packages/server
+
+# Set required API key
+wrangler secret put GEMINI_API_KEY
+# Enter your Gemini API key when prompted
+
+# Set optional voice API key
+wrangler secret put DAILY_API_KEY
+# Enter your Daily.co API key when prompted
+```
+
+### Deploy
+
+:::code-group
+
+```bash [pnpm]
+pnpm deploy
+```
+
+```bash [wrangler]
+wrangler deploy
+```
+
+:::
+
+This deploys to `https://<your-worker>.workers.dev`.
+
+::::
+
+### Custom Domain
+
+To use a custom domain like `dejavu-api.enio.la`:
+
+1. Go to Workers & Pages in Cloudflare dashboard
+2. Select your worker
+3. Go to Settings → Triggers → Custom Domains
+4. Add your domain
+
+## Frontend Deployment
+
+The web app deploys to Cloudflare Pages.
+
+### Option 1: Git Integration
+
+::::steps
+
+### Connect Repository
+
+1. Go to Workers & Pages in Cloudflare dashboard
+2. Click "Create application" → "Pages"
+3. Connect your GitHub repository
+
+### Configure Build Settings
+
+| Setting | Value |
+|---------|-------|
+| Build command | `pnpm build` |
+| Build output directory | `apps/web/dist` |
+| Root directory | `/` |
+
+### Add Environment Variable
+
+```bash
+VITE_API_URL=https://dejavu-api.enio.la
+```
+
+::::
+
+### Option 2: Direct Upload
+
+```bash [Terminal]
+cd apps/web
+pnpm build
+wrangler pages deploy dist --project-name=dejavu
+```
+
+### Custom Domain
+
+1. Go to your Pages project
+2. Go to Custom domains
+3. Add your domain (e.g., `dejavu.enio.la`)
+
+## Full Deployment Script
+
+```bash [deploy.sh] showLineNumbers
+#!/bin/bash
+
+# Install dependencies
+pnpm install
+
+# Build shared package
+pnpm --filter @dejavu/shared build
+
+# Deploy backend
+cd packages/server
+wrangler deploy
+cd ../..
+
+# Build and deploy frontend
+cd apps/web
+VITE_API_URL=https://dejavu-api.enio.la pnpm build
+wrangler pages deploy dist --project-name=dejavu
+```
+
+## Environment Configuration
+
+### Development
+
+Create `apps/web/.env`:
+
+```bash [.env]
+VITE_API_URL=http://localhost:8787
+```
+
+Run locally:
+
+:::code-group
+
+```bash [Terminal 1: Backend]
+pnpm dev:server
+```
+
+```bash [Terminal 2: Frontend]
+pnpm dev:web
+```
+
+:::
+
+### Production
+
+Set in Cloudflare Pages environment variables:
+
+```bash
+VITE_API_URL=https://dejavu-api.enio.la
+```
+
+## Analytics (Optional)
+
+Enable Cloudflare Analytics Engine for game metrics:
+
+1. Enable Analytics Engine in Cloudflare dashboard
+2. Add to `wrangler.toml`:
+
+```toml [wrangler.toml]
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+```
+
+The server automatically logs events like `game_started`, `game_finished`, etc.
+
+## Monitoring
+
+### Worker Metrics
+
+View in Cloudflare dashboard:
+- Request count
+- Error rate
+- CPU time
+- Durable Object storage
+
+### Logs
+
+View real-time logs:
+
+```bash [Terminal]
+wrangler tail
+```
+
+Or in the dashboard under Workers → Logs.
+
+## Troubleshooting
+
+:::danger[Durable Object not found]
+The Durable Object class wasn't deployed. Run:
+
+```bash
+wrangler deploy
+```
+:::
+
+:::danger[AI generation failed]
+Check that `GEMINI_API_KEY` is set correctly:
+
+```bash
+wrangler secret list
+```
+
+The game will fall back to pre-written scenarios.
+:::
+
+:::danger[Voice room creation failed]
+Verify `DAILY_API_KEY` is valid. Voice is optional—games work without it.
+:::
+
+:::danger[CORS Errors]
+Ensure the frontend origin is in the CORS config:
+
+```typescript [index.ts]
+app.use('*', cors({
+  origin: ['http://localhost:5173', 'https://dejavu.enio.la'],  // [!code hl]
+  credentials: true,
+}));
+```
+:::
+
+## Costs
+
+Cloudflare's free tier is generous:
+
+| Resource | Free Tier | Notes |
+|----------|-----------|-------|
+| Worker requests | 100K/day | More than enough for most games |
+| Durable Object requests | 1M/month | Each game action is ~1 request |
+| Durable Object storage | 1 GB | Rooms are ephemeral, minimal storage |
+| Pages | Unlimited | Static hosting |
+
+:::tip
+For high-traffic deployments, consider Workers Paid ($5/month) for higher limits.
+:::

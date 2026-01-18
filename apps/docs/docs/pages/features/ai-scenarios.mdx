@@ -1,0 +1,195 @@
+# AI Scenarios
+
+DEJAVU uses Google Gemini 2.0 Flash to generate unique memory scenarios for each round. This keeps the game fresh and unpredictable.
+
+## How It Works
+
+::::steps
+
+### Pick a category
+
+At the start of each round, the server picks a random scenario category.
+
+### Generate with Gemini
+
+The category is sent to Gemini with detailed instructions.
+
+### Parse the response
+
+The JSON response is validated and parsed into a structured scenario.
+
+### Fallback if needed
+
+If AI generation fails, the game uses pre-written scenarios.
+
+::::
+
+```typescript [ai.ts]
+const scenario = await generateMemoryScenario(env.GEMINI_API_KEY);
+```
+
+## Scenario Categories
+
+The AI generates scenarios from these themes:
+
+:::details[View All Categories]
+- An awkward moment at a grocery store
+- A party where something weird happened
+- A strange encounter on public transport
+- A customer service disaster
+- A package delivery gone wrong
+- A chaotic family dinner
+- Something bizarre at the gym
+- A first date that took a turn
+- A suspicious neighbor encounter
+- Fast food weirdness
+- A waiting room incident
+- An elevator situation
+- A coworker doing something unexplainable
+- A pet causing chaos
+- A wedding that went off script
+:::
+
+## Scenario Structure
+
+Each generated scenario contains:
+
+```typescript [MemoryScenario] showLineNumbers
+interface MemoryScenario {
+  prompt: string;         // The shared memory everyone reads
+  fragments: string[];    // 4 specific details for witnesses  // [!code hl]
+  hints: string[];        // 4 vague hints for imposters  // [!code hl]
+  detailQuestions: string[]; // 5 questions to ask about the memory
+}
+```
+
+### Example Scenario
+
+:::details[Spider-Man at the Grocery Store]
+```json
+{
+  "prompt": "You were at the grocery store when a guy in a full Spider-Man costume walked past you pushing a cart. He stopped, pointed at your cart, and gave you a thumbs up like he approved of your choices.",
+  
+  "fragments": [
+    "He had exactly 7 frozen pizzas in his cart",
+    "The costume was missing one glove, his right hand was bare",
+    "He said 'solid picks' in a totally normal voice",
+    "He was wearing Crocs under the costume, bright orange ones"
+  ],
+  
+  "hints": [
+    "Someone in unusual clothing appeared",
+    "They interacted with you briefly",
+    "It was at a store",
+    "Something about it was just absurd"
+  ],
+  
+  "detailQuestions": [
+    "How many pizzas were in his cart?",
+    "What was wrong with the costume?",
+    "What exactly did he say to you?",
+    "What shoes was he wearing?",
+    "Which hand was exposed?"
+  ]
+}
+```
+:::
+
+## The Prompt
+
+The AI receives detailed instructions for generating game-appropriate scenarios:
+
+```
+You're making scenarios for a party game. One player gets the real 
+details, others have to fake it.
+
+Theme: ${category}
+
+Make it FUNNY and SIMPLE. Think "stories you'd tell friends at a bar" 
+not "creative writing class."
+```
+
+:::tip[Key Requirements]
+- 2 sentences max for the prompt
+- Specific, memorable details (colors, numbers, quotes)
+- Vague but usable hints for imposters
+- Questions that witnesses can answer instantly
+:::
+
+## Configuration
+
+The AI is configured for creative, varied output:
+
+```typescript [config.ts] showLineNumbers
+const response = await ai.models.generateContent({
+  model: 'gemini-2.0-flash',
+  contents: prompt,
+  config: {
+    temperature: 0.9,  // High creativity  // [!code hl]
+    maxOutputTokens: 1024
+  }
+});
+```
+
+## Fallback Scenarios
+
+:::warning
+If AI generation fails (API error, rate limit, malformed response), the game falls back to 8 pre-written scenarios.
+:::
+
+```typescript [fallback.ts] showLineNumbers
+export function getFallbackScenario(): MemoryScenario {
+  const fallbacks: MemoryScenario[] = [
+    {
+      prompt: "You were at the grocery store when a guy in a full Spider-Man costume...",
+      fragments: [...],
+      hints: [...],
+      detailQuestions: [...]
+    },
+    // ... 7 more scenarios
+  ];
+  
+  return fallbacks[Math.floor(Math.random() * fallbacks.length)];  // [!code hl]
+}
+```
+
+Fallback scenarios include:
+- Spider-Man at the grocery store
+- "Darkwolf" at the coffee shop
+- Danny DeVito cutout in an elevator
+- Late night drive-thru with raccoons
+- Podcast guy at the gym
+- Shrimp lady at the bus stop
+- Wrong song at a wedding
+- Kid's drawing on a work Zoom call
+
+## Rate Limits
+
+:::info
+Gemini 2.0 Flash has generous rate limits:
+- 1500 requests per minute
+- 1 million tokens per minute
+
+With typical game usage (~1 request per round), rate limits are rarely hit.
+:::
+
+## Error Handling
+
+The system is designed to never block on AI failures:
+
+```typescript [error-handling.ts] showLineNumbers
+try {
+  const parsed = JSON.parse(jsonMatch[0]) as MemoryScenario;
+  if (parsed.prompt && parsed.fragments?.length && ...) {
+    return parsed;
+  }
+} catch (e) {
+  console.error('AI generation failed:', e);  // [!code hl]
+}
+
+return getFallbackScenario();  // [!code hl]
+```
+
+:::success
+Games continue smoothly even without AI availability.
+:::

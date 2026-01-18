@@ -1,0 +1,188 @@
+# Voice Chat
+
+DEJAVU includes built-in voice chat powered by Daily.co. Players can discuss scenarios, interrogate each other, and argue about who's faking it—all without leaving the game.
+
+## How It Works
+
+::::steps
+
+### Server creates Daily room
+
+When the host starts the game, a new Daily.co room is created.
+
+### Players join from game UI
+
+The voice room URL is broadcast to all clients via WebSocket.
+
+### Speaking indicators sync
+
+Real-time audio events show who's talking in the game UI.
+
+### Room auto-expires
+
+Rooms are automatically deleted after 1 hour.
+
+::::
+
+## Room Creation
+
+When the host starts the game, the server creates a Daily room:
+
+```typescript [voice.ts] showLineNumbers
+private async createVoiceRoom(): Promise<string | null> {
+  if (!this.env.DAILY_API_KEY) return null;
+
+  const response = await fetch('https://api.daily.co/v1/rooms', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.env.DAILY_API_KEY}`,  // [!code hl]
+    },
+    body: JSON.stringify({
+      name: `dejavu-${roomCode.toLowerCase()}`,
+      properties: {
+        exp: Math.floor(Date.now() / 1000) + 3600,  // 1 hour  // [!code hl]
+        enable_chat: false,
+        enable_screenshare: false,
+        start_video_off: true,
+        start_audio_off: false,
+      },
+    }),
+  });
+
+  const room = await response.json();
+  return room.url;
+}
+```
+
+:::info
+The room URL is broadcast to all players in the `game_started` message.
+:::
+
+## Client Integration
+
+The frontend uses the `@daily-co/daily-js` SDK:
+
+```typescript [daily.ts]
+import Daily from '@daily-co/daily-js';
+
+const callObject = Daily.createCallObject();
+await callObject.join({ url: voiceRoomUrl });
+```
+
+### Voice State
+
+The voice chat component tracks:
+
+```typescript [VoiceState] showLineNumbers
+interface VoiceState {
+  isConnected: boolean;
+  isConnecting: boolean;
+  isMuted: boolean;
+  error: string | null;
+  participants: VoiceParticipant[];
+}
+
+interface VoiceParticipant {
+  odName: string;    // Player name
+  isSpeaking: boolean;  // [!code hl]
+  isMuted: boolean;
+}
+```
+
+### Speaking Detection
+
+Daily.co provides real-time audio level events:
+
+```typescript [events.ts]
+callObject.on('participant-updated', (event) => {
+  // event.participant.audio indicates if speaking
+});
+```
+
+:::tip
+Speaking indicators appear in the UI when a player is talking.
+:::
+
+## User Interface
+
+The voice panel shows:
+
+- **Join/Leave button** — Toggle voice connection
+- **Participant list** — All connected players
+- **Speaking indicator** — Animated ring when talking
+- **Mute toggle** — For local player only
+
+```tsx [VoiceIndicator.tsx]
+<Show when={participant.isSpeaking}>
+  <span class="size-2.5 bg-success rounded-full animate-pulse" />
+</Show>
+```
+
+## Configuration Options
+
+Voice chat can be disabled per-room:
+
+```typescript [RoomConfig]
+interface RoomConfig {
+  voiceEnabled: boolean;  // Default: true
+}
+```
+
+:::note
+When disabled:
+- No Daily room is created
+- Voice UI is hidden
+- Players must use external voice (Discord, etc.)
+:::
+
+## Room Properties
+
+Daily rooms are configured for voice-only:
+
+| Property | Value | Reason |
+|----------|-------|--------|
+| `enable_chat` | `false` | Use game chat instead |
+| `enable_screenshare` | `false` | Not needed |
+| `start_video_off` | `true` | Audio only |
+| `start_audio_off` | `false` | Ready to talk immediately |
+| `exp` | +1 hour | Auto-cleanup |
+
+## Error Handling
+
+:::success
+Voice failures don't break the game:
+:::
+
+```typescript [error-handling.ts] showLineNumbers
+// Server-side
+if (!response.ok) {
+  // Try to reuse existing room
+  const existing = await fetch(`/rooms/${dailyRoomName}`);
+  if (existing.ok) {
+    return existing.json().url;
+  }
+  return null;  // Voice disabled for this game  // [!code hl]
+}
+
+// Client-side
+<Show when={voice.state().error}>
+  <p class="text-xs text-imposter">{voice.state().error}</p>
+</Show>
+```
+
+Games continue without voice if Daily is unavailable.
+
+## Best Practices
+
+:::details[For Players]
+- Join voice during the lobby phase
+- Mute when not speaking in large groups
+- Use push-to-talk if background noise is an issue
+:::
+
+:::details[For Hosts]
+- Disable voice for text-only games
+- Reduce player count for better voice quality
+- Use a shorter time scale if voice discussions run long
+:::

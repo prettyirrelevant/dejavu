@@ -1,0 +1,152 @@
+# Architecture Overview
+
+DEJAVU is a real-time multiplayer game built on a modern edge-first architecture. This page covers the high-level structure and how the pieces fit together.
+
+## Monorepo Structure
+
+```
+dejavu/
+├── apps/
+│   ├── web/          # SolidJS frontend
+│   └── docs/         # Vocs documentation (you are here)
+└── packages/
+    ├── server/       # Cloudflare Workers backend
+    └── shared/       # Shared types and constants
+```
+
+### `apps/web`
+
+The player-facing SolidJS application. Handles:
+- Room creation and joining
+- Game UI for all phases
+- Voice chat integration
+- Real-time state synchronization
+
+### `packages/server`
+
+The Cloudflare Workers backend. Contains:
+- HTTP API endpoints (room creation)
+- WebSocket handling
+- Durable Object for game state
+- AI scenario generation
+
+### `packages/shared`
+
+Shared code between frontend and backend:
+- TypeScript types (`Player`, `Phase`, `RoomConfig`)
+- Message schemas (Zod validation)
+- Game constants (timings, limits)
+
+## Request Flow
+
+Here's what happens when a player joins a game:
+
+```
+┌··········┐     ┌·············┐     ┌··············┐
+·  Browser · ◄─► · Edge Worker · ◄─► · GameRoom DO  ·
+└··········┘     └·············┘     └··············┘
+      │                                      │
+      │          ┌············┐              │
+      └────────► · Daily.co  · ◄─────────────┘
+                 └············┘
+```
+
+::::steps
+
+### Browser opens WebSocket
+
+The client connects to Cloudflare Edge via WebSocket.
+
+### Edge Worker routes request
+
+The Worker routes to the correct GameRoom Durable Object based on room code.
+
+### Durable Object manages state
+
+The GameRoom manages all game state and broadcasts updates to connected clients.
+
+### Daily.co handles voice
+
+Voice chat runs independently via WebRTC through Daily.co's infrastructure.
+
+::::
+
+## Real-Time Communication
+
+All game communication uses WebSockets with JSON messages:
+
+:::code-group
+
+```typescript [Client → Server]
+{ "type": "cast_vote", "payload": { "targetPlayerId": "p12345" } }
+```
+
+```typescript [Server → Client]
+{ "type": "round_results", "payload": { "witnessIds": [...], "votes": {...} } }
+```
+
+:::
+
+:::info
+Messages are validated on both ends using Zod schemas from `@dejavu/shared`.
+:::
+
+See [WebSocket Protocol](/architecture/protocol) for the complete message reference.
+
+## State Management
+
+Game state lives in a single Durable Object per room:
+
+```typescript [RoomState] showLineNumbers
+interface RoomState {
+  roomCode: string;
+  gameState: 'lobby' | 'playing' | 'finished';  // [!code hl]
+  config: RoomConfig;
+  players: Map<string, PlayerData>;
+  currentPhase: Phase;  // [!code hl]
+  currentRound: number;
+  roundData: RoundData | null;
+}
+```
+
+The Durable Object:
+- Persists state to storage on every change
+- Handles all game logic (phase transitions, scoring)
+- Broadcasts state changes to all connected clients
+- Uses alarms for phase timers
+
+See [Game State](/architecture/game-state) for the complete state structure.
+
+## Edge-First Design
+
+Key architectural decisions:
+
+| Choice | Rationale |
+|--------|-----------|
+| **Cloudflare Workers** | Global edge deployment, ~50ms latency worldwide |
+| **Durable Objects** | Single-threaded game rooms, no race conditions |
+| **WebSockets** | Real-time updates without polling |
+| **No database** | State lives in memory/storage per room, auto-cleanup |
+
+:::tip
+Rooms are ephemeral by design. No accounts, no persistence beyond the current game session.
+:::
+
+## External Services
+
+### Daily.co (Voice Chat)
+
+- Room created when game starts
+- Players join via WebRTC
+- Speaking indicators synced to game UI
+- Room expires after 1 hour
+
+### Google Gemini (AI Scenarios)
+
+- Called once per round for scenario generation
+- Falls back to pre-written scenarios on failure
+- Generates: prompt, fragments, hints, questions
+
+:::note
+See [AI Scenarios](/features/ai-scenarios) and [Voice Chat](/features/voice-chat) for details on these integrations.
+:::

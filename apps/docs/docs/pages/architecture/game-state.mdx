@@ -1,0 +1,257 @@
+# Game State
+
+This page documents the state structures used to manage game rooms. All state lives in Cloudflare Durable Objects.
+
+## Room State
+
+The top-level state for each game room:
+
+```typescript [RoomState] showLineNumbers
+interface RoomState {
+  roomCode: string;
+  gameState: GameState;
+  config: RoomConfig;
+  players: Map<string, PlayerData>;
+  spectators: Map<string, PlayerData>;
+  currentPhase: Phase;
+  currentRound: number;
+  phaseEndTime: number;
+  roundData: RoundData | null;
+  cleanupTime: number;
+  voiceRoomUrl: string | null;
+}
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `roomCode` | `string` | 6-character room code (e.g., "ABC123") |
+| `gameState` | `GameState` | Overall game status |
+| `config` | `RoomConfig` | Room settings configured by host |
+| `players` | `Map` | Active players in the game |
+| `spectators` | `Map` | Spectators watching the game |
+| `currentPhase` | `Phase` | Current game phase |
+| `currentRound` | `number` | Current round number (1-indexed) |
+| `phaseEndTime` | `number` | Unix timestamp when phase ends |
+| `roundData` | `RoundData` | Current round's scenario and submissions |
+| `cleanupTime` | `number` | When to clean up this room |
+| `voiceRoomUrl` | `string?` | Daily.co room URL if voice enabled |
+
+## Game State Enum
+
+```typescript
+type GameState = 'idle' | 'lobby' | 'playing' | 'finished';
+```
+
+| Value | Description |
+|-------|-------------|
+| `idle` | Room created but no players |
+| `lobby` | Players gathering, waiting to start |
+| `playing` | Game in progress |
+| `finished` | Game complete, showing final scores |
+
+## Phase Enum
+
+```typescript
+type Phase = 
+  | 'lobby'
+  | 'memory'
+  | 'roles'
+  | 'details'
+  | 'questions'
+  | 'voting'
+  | 'results';
+```
+
+:::info[Phase Flow]
+Phases flow in order: `lobby → memory → roles → details → questions → voting → results → (next round or finished)`
+:::
+
+## Room Config
+
+Settings configurable by the host:
+
+```typescript [RoomConfig] showLineNumbers
+interface RoomConfig {
+  rounds: 3 | 5 | 7;
+  timeScale: number;       // 0.5 - 1.5  // [!code hl]
+  maxPlayers: number;      // 3 - 8  // [!code hl]
+  witnessCount: 'auto' | 1 | 2;
+  allowSpectators: boolean;
+  voiceEnabled: boolean;
+}
+```
+
+### Defaults
+
+```typescript [defaults.ts]
+const DEFAULT_CONFIG = {
+  rounds: 5,
+  timeScale: 1.0,
+  maxPlayers: 6,
+  witnessCount: 'auto',
+  allowSpectators: true,
+  voiceEnabled: true,
+};
+```
+
+## Player Data
+
+Internal player representation:
+
+```typescript [PlayerData] showLineNumbers
+interface PlayerData {
+  id: string;              // "p12345678"
+  name: string;            // "Alice"
+  isHost: boolean;
+  isReady: boolean;
+  connectionStatus: ConnectionStatus;
+  score: number;
+  sessionToken: string;    // For reconnection  // [!code hl]
+}
+```
+
+### Connection Status
+
+```typescript
+type ConnectionStatus =
+  | 'connected'
+  | 'stale'       // No heartbeat for 3s
+  | 'degraded'    // No heartbeat for 10s
+  | 'dropped'     // No heartbeat for 30s
+  | 'reconnecting';
+```
+
+:::warning
+The `sessionToken` is never sent to clients—it's only used server-side for reconnection validation.
+:::
+
+### Public Player Type
+
+What gets sent to clients (no session token):
+
+```typescript [Player]
+interface Player {
+  id: string;
+  name: string;
+  isHost: boolean;
+  isReady: boolean;
+  connectionStatus: ConnectionStatus;
+  voiceStatus: VoiceStatus;
+  score: number;
+}
+```
+
+## Round Data
+
+State for the current round:
+
+```typescript [RoundData] showLineNumbers
+interface RoundData {
+  witnessIds: string[];           // Player IDs of witnesses  // [!code hl]
+  memoryPrompt: string;           // The scenario text
+  fragments: string[];            // Witness-only details  // [!code hl]
+  hints: string[];                // Imposter-only hints  // [!code hl]
+  detailQuestions: string[];      // Questions pool
+  currentQuestionIndex: number;
+  playerDetails: Record<string, string>;  // Submitted answers
+  votes: Record<string, string>;  // voterId -> targetId
+}
+```
+
+### Example
+
+:::details[Full RoundData Example]
+```json
+{
+  "witnessIds": ["p12345", "p67890"],
+  "memoryPrompt": "You were at the grocery store when a guy in a Spider-Man costume...",
+  "fragments": [
+    "He had exactly 7 frozen pizzas in his cart",
+    "The costume was missing one glove, his right hand was bare",
+    "He said \"solid picks\" in a totally normal voice",
+    "He was wearing Crocs under the costume, bright orange ones"
+  ],
+  "hints": [
+    "Someone in unusual clothing appeared",
+    "They interacted with you briefly",
+    "It was at a store",
+    "Something about it was just absurd"
+  ],
+  "detailQuestions": [
+    "How many pizzas were in his cart?",
+    "What was wrong with the costume?",
+    "What exactly did he say to you?",
+    "What shoes was he wearing?"
+  ],
+  "currentQuestionIndex": 0,
+  "playerDetails": {
+    "p12345": "7 pizzas",
+    "p67890": "7 frozen pizzas",
+    "pabcde": "5 or 6 pizzas"
+  },
+  "votes": {
+    "pabcde": "p12345",
+    "p12345": "pabcde"
+  }
+}
+```
+:::
+
+## Phase Durations
+
+Default timing for each phase (in milliseconds):
+
+```typescript [constants.ts] showLineNumbers
+const PHASE_DURATIONS = {
+  memory: 15000,    // 15 seconds
+  roles: 20000,     // 20 seconds
+  details: 45000,   // 45 seconds
+  questions: 45000, // 45 seconds
+  voting: 15000,    // 15 seconds
+  results: 15000,   // 15 seconds
+};
+```
+
+:::tip
+Durations are multiplied by `config.timeScale` (0.5x = faster, 1.5x = slower).
+:::
+
+## State Persistence
+
+State is persisted to Durable Object storage on every change:
+
+```typescript [persistence.ts] showLineNumbers
+private async persistState(): Promise<void> {
+  if (!this.state) return;
+  
+  const serializable = {
+    ...this.state,
+    players: Object.fromEntries(this.state.players),  // [!code hl]
+    spectators: Object.fromEntries(this.state.spectators),  // [!code hl]
+  };
+  
+  await this.ctx.storage.put('state', serializable);
+}
+```
+
+:::note
+Maps are converted to plain objects for JSON serialization.
+:::
+
+## Cleanup
+
+Rooms auto-cleanup in two scenarios:
+
+1. **Lobby timeout**: 5 minutes with no game start
+2. **Finished timeout**: 5 minutes after game ends with no players
+
+```typescript [timeouts.ts]
+const LOBBY_TIMEOUT = 5 * 60 * 1000;
+const FINISHED_TIMEOUT = 5 * 60 * 1000;
+```
+
+:::info
+Cleanup is triggered via Durable Object alarms.
+:::

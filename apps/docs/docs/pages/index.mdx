@@ -1,0 +1,68 @@
+# DEJAVU
+
+A social deduction party game where memory meets deception.
+
+---
+
+## What is DEJAVU?
+
+DEJAVU is a multiplayer party game where players try to identify who among them actually witnessed a strange event, and who is faking it.
+
+Every round, an AI generates a quirky scenario—something like *"a guy in a Spider-Man costume at the grocery store"* or *"an old lady at a coffee shop named Darkwolf."* One or two players become **Witnesses** and receive the real details. Everyone else becomes **Imposters** who must fabricate convincing answers from vague hints.
+
+---
+
+## The Core Loop
+
+::::steps
+
+### Everyone reads the scenario
+
+A shared memory prompt sets the scene for all players.
+
+### Witnesses get details, Imposters get hints
+
+Witnesses see specific fragments (colors, numbers, quotes). Imposters only get vague hints.
+
+### Answer the question
+
+All players privately answer a specific question about the memory.
+
+### Discuss via voice chat
+
+Interrogate each other. Look for inconsistencies. Defend your answer.
+
+### Vote on who witnessed it
+
+Cast your vote for who you think is a real witness.
+
+::::
+
+:::tip[The Twist]
+Witnesses score points when they're *not* identified. Imposters score when they correctly identify a witness. Trust no one.
+:::
+
+---
+
+## Quick Links
+
+| | |
+|---|---|
+| [**How to Play**](/how-to-play) | Rules, scoring, and strategy tips |
+| [**Architecture**](/architecture/overview) | Technical deep dive |
+| [**GitHub**](https://github.com/prettyirrelevant/dejavu) | View the source code |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | SolidJS, Tailwind CSS v4 |
+| Backend | Cloudflare Workers, Durable Objects, Hono |
+| Voice | Daily.co WebRTC |
+| AI | Google Gemini 2.0 Flash |
+
+:::note
+3-8 players. No accounts required. Just share a room code and play.
+:::

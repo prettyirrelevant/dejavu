@@ -1,0 +1,259 @@
+# Reconnection Handling
+
+DEJAVU is designed to handle connection drops gracefully. Players can rejoin mid-game without losing their progress or role.
+
+## Session Tokens
+
+When a player joins a room, they receive a session token:
+
+```typescript [session.ts]
+const sessionToken = `${roomCode}.${playerId}.${timestamp}.${random}`;
+// Example: "ABC123.p12345.1234567890.abcd1234"
+```
+
+This token is:
+- Stored in the browser's localStorage
+- Used to reconnect without re-entering name
+- Valid for the duration of the room
+
+### Storage
+
+```typescript [storage.ts] showLineNumbers
+// Save on join
+localStorage.setItem(`dejavu:session:${roomCode}`, JSON.stringify({
+  sessionToken,
+  playerId,
+  playerName
+}));
+
+// Retrieve on reconnect
+const session = getSession(roomCode);
+```
+
+## Reconnection Flow
+
+::::steps
+
+### Check storage
+
+When a player returns to a room URL, the client checks localStorage for an existing session.
+
+### Validate or show join form
+
+If a session exists, attempt reconnection. Otherwise, show the join form.
+
+### Server validates token
+
+The server validates the session token against stored player data.
+
+### Restore state
+
+On success, the server sends complete game state to restore the UI.
+
+::::
+
+```
+┌·········┐     ┌···············┐     ┌··············┐
+· Browser · ──► · Check Storage · ──► · Has Session? ·
+└·········┘     └···············┘     └······┬·······┘
+                                             │
+                      ┌──────────────────────┼──────────────────────┐
+                      ▼                      ▼                      │
+                ┌···········┐          ┌············┐               │
+                ·    Yes    ·          ·     No     ·               │
+                └·····┬·····┘          └······┬·····┘               │
+                      ▼                       ▼                     │
+              ┌··············┐         ┌············┐               │
+              · Send message · ──────► · Join Form  ·◄──────────────┤
+              └······┬·······┘         └············┘               │
+                     ▼                                              │
+              ┌··············┐                                      │
+              ·   Validate   · ─────── Invalid ─────────────────────┘
+              └······┬·······┘
+                     ▼ Valid
+              ┌··············┐
+              · Restore state·
+              └··············┘
+```
+
+### Client Code
+
+```typescript [reconnect.ts] showLineNumbers
+onMount(async () => {
+  const session = getSession(roomCode);
+  
+  if (session) {
+    try {
+      const success = await reconnectToRoom(roomCode);
+      if (!success) {
+        setNeedsJoin(true);  // [!code hl]
+      }
+    } catch {
+      setError('Failed to reconnect');
+    }
+  } else {
+    setNeedsJoin(true);
+  }
+});
+```
+
+### Reconnect Message
+
+```typescript [message]
+{
+  "type": "reconnect",
+  "payload": {
+    "roomCode": "ABC123",
+    "sessionToken": "ABC123.p12345.1234567890.abcd1234"
+  }
+}
+```
+
+## State Restoration
+
+On successful reconnection, the server sends complete state:
+
+```typescript [reconnect_success] showLineNumbers
+{
+  "type": "reconnect_success",
+  "payload": {
+    "gameState": "playing",
+    "currentPhase": "questions",
+    "roundNumber": 2,
+    "totalRounds": 5,
+    "yourRole": "witness",  // [!code hl]
+    "yourFragments": ["7 pizzas", "orange crocs", ...],  // [!code hl]
+    "memoryPrompt": "You were at the grocery store...",
+    "detailQuestion": "How many pizzas were in his cart?",
+    "details": {
+      "p12345": "7 pizzas",
+      "p67890": "about 5"
+    },
+    "timeRemaining": 30000,
+    "players": [...],
+    "scores": { "p12345": 10, "p67890": 15 }
+  }
+}
+```
+
+The client reconstructs the UI based on:
+- Current phase (show correct phase component)
+- Role data (fragments or hints)
+- Submitted answers
+- Time remaining
+
+## Connection Status Tracking
+
+The server tracks connection quality via heartbeats:
+
+:::code-group
+
+```typescript [Client sends ping]
+{ "type": "ping", "payload": { "clientTime": 1234567890 } }
+```
+
+```typescript [Server responds with pong]
+{ "type": "pong", "payload": { "serverTime": 1234567890 } }
+```
+
+:::
+
+### Status Thresholds
+
+```typescript [thresholds.ts]
+const HEARTBEAT_INTERVAL = 2000;   // Send ping every 2s
+const STALE_THRESHOLD = 3000;      // No ping for 3s
+const DEGRADED_THRESHOLD = 10000;  // No ping for 10s
+const DROPPED_THRESHOLD = 30000;   // No ping for 30s
+```
+
+| Status | Meaning |
+|--------|---------|
+| `connected` | Healthy connection |
+| `stale` | Slight delay, probably fine |
+| `degraded` | Significant delay, may drop |
+| `dropped` | Connection lost |
+| `reconnecting` | Attempting to reconnect |
+
+### Broadcasting Status
+
+:::info
+Other players see connection changes:
+:::
+
+```typescript [broadcast]
+{
+  "type": "player_connection_changed",
+  "payload": {
+    "playerId": "p12345",
+    "status": "dropped"
+  }
+}
+```
+
+## UI Indicators
+
+The connection status appears in the bottom-left corner:
+
+```tsx [ConnectionIndicator.tsx]
+<div class="fixed bottom-4 left-4">
+  <WifiIcon class={config().color} animate={status === 'connecting'} />
+  <span>{formatLatency(connection.latency)}</span>
+</div>
+```
+
+Status colors:
+- **Green** — Connected (shows latency in ms)
+- **Amber** — Connecting/reconnecting
+- **Red** — Disconnected or error
+
+## Edge Cases
+
+:::danger[Player Disconnects Mid-Vote]
+- Their vote is not counted
+- Game continues with remaining players
+- They can reconnect and vote if time remains
+:::
+
+:::danger[Witness Disconnects]
+- Round may be voided if witness can't be restored
+- Other players receive `round_voided` message
+- Game can continue to next round
+:::
+
+:::warning[Host Disconnects]
+- Host is transferred to next player
+- All players receive `host_transferred` message
+- Original host can still reconnect as regular player
+:::
+
+:::danger[Invalid Session]
+```typescript
+{
+  "type": "error",
+  "payload": {
+    "code": "INVALID_SESSION",
+    "message": "Invalid session token"
+  }
+}
+```
+
+Player must re-join with their name. Possible causes:
+- Token expired (room ended)
+- Token was for different room
+- Storage was cleared
+:::
+
+## Best Practices
+
+:::details[For Development]
+- Test reconnection by refreshing during each phase
+- Simulate disconnects with browser DevTools
+- Verify state restoration is complete
+:::
+
+:::details[For Players]
+- Don't close the tab—refresh instead
+- If stuck, clear localStorage and rejoin
+- Reconnect quickly to not miss voting
+:::
