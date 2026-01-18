@@ -17,5 +17,4 @@ new_sqlite_classes = ["GameRoom"]
 binding = "ANALYTICS"
 dataset = "dejavu_analytics"
 
-[vars]
-CALLS_APP_ID = "0b748617544f4e1887b6ebee4021fe67"
+
