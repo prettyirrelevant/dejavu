@@ -696,6 +696,18 @@ export class GameRoom extends DurableObject<Env> {
     const isStaleState = this.state.gameState === 'lobby' || this.state.gameState === 'finished';
     
     if (isCleanupTime && isStaleState) {
+      if (this.state.gameState === 'lobby') {
+        const message: ServerMessage = { type: 'room_closed', payload: { reason: 'timeout' } };
+        this.broadcast(message);
+        for (const session of this.sessions.values()) {
+          session.socket.close(1000, 'Room expired');
+        }
+        this.sessions.clear();
+        await this.ctx.storage.deleteAll();
+        this.state = null;
+        return;
+      }
+      
       if (this.sessions.size === 0) {
         await this.ctx.storage.deleteAll();
         this.state = null;

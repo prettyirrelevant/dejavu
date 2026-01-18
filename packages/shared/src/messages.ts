@@ -422,6 +422,13 @@ export interface ErrorMessage {
   };
 }
 
+export interface RoomClosedMessage {
+  type: 'room_closed';
+  payload: {
+    reason: 'timeout' | 'host_ended';
+  };
+}
+
 export type ServerMessage =
   | RoomCreatedMessage
   | RoomJoinedMessage
@@ -449,4 +456,5 @@ export type ServerMessage =
   | PhaseTimeUpdateMessage
   | ReconnectSuccessMessage
   | PongMessage
-  | ErrorMessage;
+  | ErrorMessage
+  | RoomClosedMessage;

@@ -149,7 +149,7 @@ export default function Lobby(props: LobbyProps) {
             <div class="flex flex-col gap-2 pr-6">
               <p class="text-sm font-medium text-text">First time?</p>
               <p class="text-xs text-muted">
-                One player remembers everything. The rest are faking it. Your job? Find the real witness.
+                Someone saw what happened. The rest are bluffing. Figure out who's telling the truth.
               </p>
               <button
                 type="button"
@@ -289,7 +289,7 @@ export default function Lobby(props: LobbyProps) {
             </Show>
 
             <p class="pt-4 text-center text-[11px] text-muted/70">
-              Room closes 5 min after everyone leaves
+              Room closes if game doesn't start within 5 min
             </p>
           </Show>
         </footer>

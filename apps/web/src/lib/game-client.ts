@@ -339,6 +339,14 @@ function handleMessage(message: ServerMessage): void {
       client?.handlePong();
       break;
 
+    case 'room_closed': {
+      client?.disconnect();
+      client = null;
+      resetGame();
+      toast.error('Room expired. Start a new game to play.');
+      break;
+    }
+
     case 'error': {
       console.error('Server error:', message.payload.code, message.payload.message);
       toast.error(message.payload.message);
