@@ -45,7 +45,7 @@ export default function MyConnectionStatus() {
   return (
     <div
       class={cn(
-        'fixed bottom-4 right-4 z-50 flex items-center gap-2 border px-3 py-2 text-xs',
+        'fixed bottom-4 left-4 z-50 flex items-center gap-2 border px-3 py-2 text-xs',
         isDisconnected()
           ? 'border-imposter/30 bg-imposter/5'
           : 'border-border bg-surface'
