@@ -15,110 +15,112 @@ export default function HowToPlay() {
 
       <Show when={isOpen()}>
         <div
-          class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
           onClick={(e) => e.target === e.currentTarget && setIsOpen(false)}
         >
-          <div class="max-h-[85vh] w-full max-w-md overflow-y-auto border border-border bg-background p-6">
-            <div class="flex items-center justify-between mb-6">
-              <h2 class="text-xl font-bold text-text">How to Play</h2>
+          <div class="max-h-[85vh] w-full max-w-md overflow-y-auto bg-background">
+            <div class="sticky top-0 flex items-center justify-between border-b border-border bg-background px-6 py-4">
+              <h2 class="text-lg font-semibold text-text tracking-tight">How to Play</h2>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                class="text-muted hover:text-text"
+                class="text-muted hover:text-text transition-colors"
               >
-                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                   <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            <div class="flex flex-col gap-5 text-sm">
-              <section>
-                <h3 class="font-semibold text-text mb-2">The Concept</h3>
-                <p class="text-muted">
-                  Something strange happened and everyone claims they saw it. But only the 
-                  <span class="text-witness font-medium"> Witnesses</span> (one or two players) actually know the real details.
-                  Everyone else is an <span class="text-imposter font-medium">Imposter</span> making things up.
-                  Your job is to figure out who's telling the truth.
+            <div class="flex flex-col divide-y divide-border">
+              <section class="px-6 py-5">
+                <p class="text-sm text-muted leading-relaxed">
+                  Something strange happened. One or two of you actually saw it.
+                  The rest are making it up. Find the <span class="text-witness">Witness</span> before 
+                  the <span class="text-imposter">Imposters</span> fool everyone.
                 </p>
               </section>
 
-              <section>
-                <h3 class="font-semibold text-text mb-2">The Roles</h3>
-                <div class="flex flex-col gap-3 text-muted">
-                  <div class="border border-witness/30 bg-witness/5 p-3">
-                    <p class="text-witness font-medium mb-1">Witness</p>
-                    <p class="text-xs">You receive the actual memory fragments with specific details like exact colors, numbers, and quotes. Your goal is to answer questions accurately without being too obvious about knowing the truth.</p>
+              <section class="px-6 py-5">
+                <h3 class="text-xs font-medium uppercase tracking-widest text-muted/60 mb-4">Roles</h3>
+                <div class="space-y-4">
+                  <div>
+                    <p class="text-sm text-text font-medium">Witness</p>
+                    <p class="text-sm text-muted mt-1 leading-relaxed">
+                      You get the real details: exact colors, numbers, quotes. Answer accurately, but not too perfectly.
+                    </p>
                   </div>
-                  <div class="border border-imposter/30 bg-imposter/5 p-3">
-                    <p class="text-imposter font-medium mb-1">Imposter</p>
-                    <p class="text-xs">You only get vague hints about the scenario. You need to make up convincing details and blend in. Try to spot the Witness by watching who seems too confident or specific.</p>
+                  <div>
+                    <p class="text-sm text-text font-medium">Imposter</p>
+                    <p class="text-sm text-muted mt-1 leading-relaxed">
+                      You only get vague hints. Make up convincing details. Watch for anyone who knows too much.
+                    </p>
                   </div>
                 </div>
               </section>
 
-              <section>
-                <h3 class="font-semibold text-text mb-2">Game Flow</h3>
-                <ol class="flex flex-col gap-3 text-muted">
-                  <li class="flex gap-3">
-                    <span class="flex size-5 items-center justify-center rounded-full bg-muted/20 text-xs font-medium">1</span>
+              <section class="px-6 py-5">
+                <h3 class="text-xs font-medium uppercase tracking-widest text-muted/60 mb-4">Flow</h3>
+                <div class="space-y-4">
+                  <div class="flex gap-4">
+                    <span class="text-sm text-muted/40 tabular-nums w-4 shrink-0">01</span>
                     <div>
-                      <span class="text-text font-medium">Memory</span>
-                      <p class="text-xs mt-0.5">Everyone sees the same scenario. Read it carefully because you'll need to answer questions about it.</p>
+                      <p class="text-sm text-text font-medium">Memory</p>
+                      <p class="text-sm text-muted mt-0.5">Everyone reads the same scenario.</p>
                     </div>
-                  </li>
-                  <li class="flex gap-3">
-                    <span class="flex size-5 items-center justify-center rounded-full bg-muted/20 text-xs font-medium">2</span>
+                  </div>
+                  <div class="flex gap-4">
+                    <span class="text-sm text-muted/40 tabular-nums w-4 shrink-0">02</span>
                     <div>
-                      <span class="text-text font-medium">Roles Revealed</span>
-                      <p class="text-xs mt-0.5">The Witness sees 4 specific details (colors, quotes, numbers). Imposters see 4 vague hints they'll use to fake their answers.</p>
+                      <p class="text-sm text-text font-medium">Roles</p>
+                      <p class="text-sm text-muted mt-0.5">Witnesses see specifics. Imposters see hints.</p>
                     </div>
-                  </li>
-                  <li class="flex gap-3">
-                    <span class="flex size-5 items-center justify-center rounded-full bg-muted/20 text-xs font-medium">3</span>
+                  </div>
+                  <div class="flex gap-4">
+                    <span class="text-sm text-muted/40 tabular-nums w-4 shrink-0">03</span>
                     <div>
-                      <span class="text-text font-medium">Answer Time</span>
-                      <p class="text-xs mt-0.5">A question appears about the scenario. Everyone writes their answer privately. The Witness knows the truth but Imposters must invent something believable.</p>
+                      <p class="text-sm text-text font-medium">Answer</p>
+                      <p class="text-sm text-muted mt-0.5">Everyone privately answers a question about the memory.</p>
                     </div>
-                  </li>
-                  <li class="flex gap-3">
-                    <span class="flex size-5 items-center justify-center rounded-full bg-muted/20 text-xs font-medium">4</span>
+                  </div>
+                  <div class="flex gap-4">
+                    <span class="text-sm text-muted/40 tabular-nums w-4 shrink-0">04</span>
                     <div>
-                      <span class="text-text font-medium">Discussion</span>
-                      <p class="text-xs mt-0.5">All answers are revealed side by side. Talk with your group! Question suspicious answers. Look for people who are too vague or too specific.</p>
+                      <p class="text-sm text-text font-medium">Discuss</p>
+                      <p class="text-sm text-muted mt-0.5">All answers revealed. Talk. Interrogate. Get suspicious.</p>
                     </div>
-                  </li>
-                  <li class="flex gap-3">
-                    <span class="flex size-5 items-center justify-center rounded-full bg-muted/20 text-xs font-medium">5</span>
+                  </div>
+                  <div class="flex gap-4">
+                    <span class="text-sm text-muted/40 tabular-nums w-4 shrink-0">05</span>
                     <div>
-                      <span class="text-text font-medium">Vote</span>
-                      <p class="text-xs mt-0.5">Everyone votes for who they think is a Witness. You cannot vote for yourself. Results are revealed after everyone votes.</p>
+                      <p class="text-sm text-text font-medium">Vote</p>
+                      <p class="text-sm text-muted mt-0.5">Pick who you think is a Witness. No voting for yourself.</p>
                     </div>
-                  </li>
-                </ol>
+                  </div>
+                </div>
               </section>
 
-              <section>
-                <h3 class="font-semibold text-text mb-2">Scoring</h3>
-                <ul class="flex flex-col gap-2 text-muted">
-                  <li class="flex gap-2 items-start">
-                    <span class="text-success font-bold w-8">+10</span>
-                    <span>You correctly voted for a Witness</span>
-                  </li>
-                  <li class="flex gap-2 items-start">
-                    <span class="text-witness font-bold w-8">+5</span>
-                    <span>You're a Witness and someone voted for the wrong person</span>
-                  </li>
-                </ul>
-                <p class="text-xs text-muted/70 mt-2">The player with the most points after all rounds wins!</p>
+              <section class="px-6 py-5">
+                <h3 class="text-xs font-medium uppercase tracking-widest text-muted/60 mb-4">Points</h3>
+                <div class="space-y-2">
+                  <div class="flex items-baseline justify-between">
+                    <span class="text-sm text-muted">Correctly identify a Witness</span>
+                    <span class="text-sm font-semibold text-success">+10</span>
+                  </div>
+                  <div class="flex items-baseline justify-between">
+                    <span class="text-sm text-muted">Witness fools a voter</span>
+                    <span class="text-sm font-semibold text-witness">+5</span>
+                  </div>
+                </div>
+                <p class="text-xs text-muted/50 mt-3">Most points after all rounds wins.</p>
               </section>
 
-              <section class="border-t border-border pt-4">
-                <h3 class="font-semibold text-text mb-2">Tips</h3>
-                <ul class="flex flex-col gap-1.5 text-xs text-muted">
-                  <li><span class="text-witness">Witnesses:</span> Don't be too accurate. Throw in a small "mistake" to seem like you're guessing too. If there are two Witnesses, don't give each other away by having identical answers!</li>
-                  <li><span class="text-imposter">Imposters:</span> Confidence sells. Pick specific details and commit to them fully.</li>
-                  <li><span class="text-text">Everyone:</span> Pay attention to how people defend their answers, not just what they wrote.</li>
+              <section class="px-6 py-5 bg-surface/50">
+                <h3 class="text-xs font-medium uppercase tracking-widest text-muted/60 mb-3">Quick tips</h3>
+                <ul class="space-y-2 text-sm text-muted">
+                  <li><span class="text-witness">Witnesses</span> · Don't be perfect. Small mistakes make you look human.</li>
+                  <li><span class="text-imposter">Imposters</span> · Commit fully. Hesitation is suspicious.</li>
+                  <li><span class="text-text">Everyone</span> · Watch how people defend their answers.</li>
                 </ul>
               </section>
             </div>
