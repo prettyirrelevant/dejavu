@@ -6,7 +6,7 @@ export default defineConfig({
   description: 'A social deduction party game where players find the real witness among imposters',
   ogImageUrl: 'https://vocs.dev/api/og?logo=%logo&title=%title&description=%description',
   font: {
-    google: 'Inter',
+    google: 'Lato',
   },
   topNav: [
     { text: 'Play Now', link: 'https://dejavu.enio.la' },
