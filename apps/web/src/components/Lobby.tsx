@@ -252,6 +252,10 @@ export default function Lobby(props: LobbyProps) {
             <div class="flex justify-center pt-2">
               <HowToPlay />
             </div>
+
+            <p class="pt-4 text-center text-[11px] text-muted/70">
+              Rooms self-destruct after 10 idle minutes. No pressure.
+            </p>
           </Show>
         </footer>
       </div>

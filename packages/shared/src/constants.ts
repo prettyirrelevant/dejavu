@@ -26,7 +26,7 @@ export const STALE_THRESHOLD = 3000;
 export const DEGRADED_THRESHOLD = 10000;
 export const DROPPED_THRESHOLD = 30000;
 
-export const LOBBY_TIMEOUT = 30 * 60 * 1000;
+export const LOBBY_TIMEOUT = 10 * 60 * 1000;
 export const FINISHED_TIMEOUT = 5 * 60 * 1000;
 
 export const RATE_LIMIT_MAX = 10;
