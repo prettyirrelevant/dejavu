@@ -56,6 +56,7 @@ interface RoomState {
   phaseEndTime: number;
   roundData: RoundData | null;
   cleanupTime: number;
+  voiceRoomUrl: string | null;
 }
 
 export class GameRoom extends DurableObject<Env> {
@@ -86,6 +87,7 @@ export class GameRoom extends DurableObject<Env> {
       phaseEndTime: 0,
       roundData: null,
       cleanupTime,
+      voiceRoomUrl: null,
     };
 
     await this.persistState();
@@ -346,6 +348,11 @@ export class GameRoom extends DurableObject<Env> {
 
     this.state.gameState = 'playing';
     this.state.currentRound = 1;
+
+    if (this.state.config.voiceEnabled) {
+      this.state.voiceRoomUrl = await this.createVoiceRoom();
+    }
+
     await this.persistState();
 
     this.track('game_started', { 
@@ -358,6 +365,7 @@ export class GameRoom extends DurableObject<Env> {
       payload: {
         totalRounds: this.state.config.rounds,
         players: [...this.state.players.values()].map((p) => ({ id: p.id, name: p.name })),
+        voiceRoomUrl: this.state.voiceRoomUrl || undefined,
       },
     };
 
@@ -982,6 +990,45 @@ export class GameRoom extends DurableObject<Env> {
     return `${this.state.roomCode}.${playerId}.${timestamp}.${random}`;
   }
 
+  private async createVoiceRoom(): Promise<string | null> {
+    if (!this.state || !this.env.DAILY_API_KEY) return null;
+
+    const dailyRoomName = `dejavu-${this.state.roomCode.toLowerCase()}`;
+
+    const response = await fetch('https://api.daily.co/v1/rooms', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.env.DAILY_API_KEY}`,
+      },
+      body: JSON.stringify({
+        name: dailyRoomName,
+        properties: {
+          exp: Math.floor(Date.now() / 1000) + 3600,
+          enable_chat: false,
+          enable_screenshare: false,
+          start_video_off: true,
+          start_audio_off: false,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const existing = await fetch(`https://api.daily.co/v1/rooms/${dailyRoomName}`, {
+        headers: { 'Authorization': `Bearer ${this.env.DAILY_API_KEY}` },
+      });
+
+      if (existing.ok) {
+        const room = await existing.json() as { url: string };
+        return room.url;
+      }
+      return null;
+    }
+
+    const room = await response.json() as { url: string };
+    return room.url;
+  }
+
   private track(event: string, data: Record<string, string | number> = {}): void {
     if (!this.env.ANALYTICS) return;
     try {
@@ -1025,6 +1072,5 @@ interface Env {
   GAME_ROOM: DurableObjectNamespace<GameRoom>;
   GEMINI_API_KEY: string;
   ANALYTICS?: AnalyticsEngineDataset;
-  CALLS_APP_ID: string;
-  CALLS_APP_SECRET: string;
+  DAILY_API_KEY?: string;
 }

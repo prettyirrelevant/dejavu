@@ -244,6 +244,7 @@ export interface GameStartedMessage {
   payload: {
     totalRounds: number;
     players: Pick<Player, 'id' | 'name'>[];
+    voiceRoomUrl?: string;
   };
 }
 

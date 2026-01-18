@@ -1,7 +1,6 @@
 import Daily, { DailyCall, DailyParticipant, DailyEventObjectActiveSpeakerChange } from '@daily-co/daily-js';
 import { createSignal, onCleanup } from 'solid-js';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+import { game } from '../stores/game';
 
 export interface VoiceParticipant {
   odId: string
@@ -49,16 +48,10 @@ export function createVoiceChat(roomCode: string, playerId: string, playerName: 
     try {
       setState((prev) => ({ ...prev, isConnecting: true, error: null }));
 
-      const response = await fetch(`${API_URL}/voice/${roomCode}`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create voice room');
+      const url = game.voiceRoomUrl;
+      if (!url) {
+        throw new Error('Voice chat not available');
       }
-
-      const { url } = await response.json() as { url: string };
 
       callObject = Daily.createCallObject({
         audioSource: true,

@@ -24,6 +24,7 @@ interface GameStore {
   witnessIds: string[];
   witnessNames: string[];
   synced: boolean;
+  voiceRoomUrl: string | null;
 }
 
 const initialState: GameStore = {
@@ -49,6 +50,7 @@ const initialState: GameStore = {
   witnessIds: [],
   witnessNames: [],
   synced: false,
+  voiceRoomUrl: null,
 };
 
 const [game, setGame] = createStore<GameStore>(initialState);

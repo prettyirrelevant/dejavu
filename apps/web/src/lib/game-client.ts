@@ -135,12 +135,13 @@ function handleMessage(message: ServerMessage): void {
     }
 
     case 'game_started': {
-      const { totalRounds } = message.payload;
+      const { totalRounds, voiceRoomUrl } = message.payload;
       setGame((prev) => ({
         ...prev,
         totalRounds,
         round: 1,
         phase: 'memory',
+        voiceRoomUrl: voiceRoomUrl || null,
       }));
       break;
     }
