@@ -2,6 +2,8 @@ import { DurableObject } from 'cloudflare:workers';
 import {
   ClientMessageSchema,
   DEFAULT_CONFIG,
+  FINISHED_TIMEOUT,
+  LOBBY_TIMEOUT,
   MIN_PLAYERS,
   PHASE_DURATIONS,
   PLAYER_NAME_REGEX,
@@ -53,6 +55,7 @@ interface RoomState {
   currentRound: number;
   phaseEndTime: number;
   roundData: RoundData | null;
+  cleanupTime: number;
 }
 
 export class GameRoom extends DurableObject<Env> {
@@ -70,6 +73,8 @@ export class GameRoom extends DurableObject<Env> {
       return;
     }
 
+    const cleanupTime = Date.now() + LOBBY_TIMEOUT;
+    
     this.state = {
       roomCode,
       gameState: 'lobby',
@@ -80,9 +85,11 @@ export class GameRoom extends DurableObject<Env> {
       currentRound: 0,
       phaseEndTime: 0,
       roundData: null,
+      cleanupTime,
     };
 
     await this.persistState();
+    this.ctx.storage.setAlarm(cleanupTime);
   }
 
   private async persistState(): Promise<void> {
@@ -684,6 +691,22 @@ export class GameRoom extends DurableObject<Env> {
   async alarm(): Promise<void> {
     if (!this.state) return;
 
+    const now = Date.now();
+    const isCleanupTime = now >= this.state.cleanupTime;
+    const isStaleState = this.state.gameState === 'lobby' || this.state.gameState === 'finished';
+    
+    if (isCleanupTime && isStaleState) {
+      if (this.sessions.size === 0) {
+        await this.ctx.storage.deleteAll();
+        this.state = null;
+        return;
+      }
+      this.state.cleanupTime = now + FINISHED_TIMEOUT;
+      await this.persistState();
+      this.ctx.storage.setAlarm(this.state.cleanupTime);
+      return;
+    }
+
     switch (this.state.currentPhase) {
       case 'memory':
         await this.transitionToRoles();
@@ -883,7 +906,9 @@ export class GameRoom extends DurableObject<Env> {
 
     this.state.gameState = 'finished';
     this.state.currentPhase = 'lobby';
+    this.state.cleanupTime = Date.now() + FINISHED_TIMEOUT;
     await this.persistState();
+    this.ctx.storage.setAlarm(this.state.cleanupTime);
 
     const players = [...this.state.players.values()];
     const winner = players.sort((a, b) => b.score - a.score)[0];
